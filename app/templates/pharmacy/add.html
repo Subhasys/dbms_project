@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Medicine — CarePlus HMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold fs-5">
+                    <i class="bi bi-capsule-pill text-primary me-2"></i>Add Medicine to Inventory
+                </span>
+                <span class="badge bg-secondary">Sequence: seq_medicine</span>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Medicine Brand Name &amp; Strength <span class="text-danger">*</span></label>
+                        <input type="text" name="medicine_name" class="form-control" required placeholder="e.g. Amoxicillin 500mg">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Manufacturer / Pharma Company <span class="text-danger">*</span></label>
+                        <input type="text" name="manufacturer" class="form-control" required placeholder="e.g. Cipla Ltd / Sun Pharma">
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Unit Price (₹) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" step="0.01" min="0.05" name="unit_price" class="form-control" required placeholder="12.50">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Initial Stock Quantity <span class="text-danger">*</span></label>
+                            <input type="number" min="0" name="stock_qty" class="form-control" required placeholder="100">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Expiry Date <span class="text-danger">*</span></label>
+                        <input type="date" name="expiry_date" class="form-control" required value="{{ today }}">
+                        <div class="form-text">Medicines expiring within 6 months or already expired will trigger status warnings.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('pharmacy.list_medicines') }}" class="btn btn-light border">&larr; Back to Pharmacy</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-plus-circle me-1"></i>Save Medicine
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

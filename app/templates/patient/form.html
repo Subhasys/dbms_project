@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}{{ action }} Patient — CarePlus HMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold fs-5">
+                    <i class="bi bi-person-badge text-primary me-2"></i>{{ action }} Patient
+                </span>
+                <a href="{{ url_for('patient.list_patients') }}" class="btn btn-outline-secondary btn-sm">
+                    &larr; Back to Patients
+                </a>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    <h6 class="text-primary fw-semibold mb-3 border-bottom pb-2">Personal Information</h6>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" required value="{{ patient.name if patient else '' }}" placeholder="e.g. Ramesh Kumar">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Date of Birth <span class="text-danger">*</span></label>
+                            <input type="date" name="dob" class="form-control" required value="{{ patient.dob.strftime('%Y-%m-%d') if patient and patient.dob else '' }}" {% if patient %}readonly{% endif %}>
+                            {% if patient %}<small class="text-muted">DOB immutable</small>{% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Gender <span class="text-danger">*</span></label>
+                            <select name="gender" class="form-select" required {% if patient %}disabled{% endif %}>
+                                <option value="Male" {% if patient and patient.gender == 'Male' %}selected{% endif %}>Male</option>
+                                <option value="Female" {% if patient and patient.gender == 'Female' %}selected{% endif %}>Female</option>
+                                <option value="Other" {% if patient and patient.gender == 'Other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Blood Group</label>
+                            <select name="blood_group" class="form-select">
+                                <option value="">Select blood group</option>
+                                {% for bg in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] %}
+                                    <option value="{{ bg }}" {% if patient and patient.blood_group == bg %}selected{% endif %}>{{ bg }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Medical History / Allergies</label>
+                            <input type="text" name="medical_history" class="form-control" value="{{ patient.medical_history if patient else 'None' }}" placeholder="e.g. Type 2 Diabetes, Hypertension, None">
+                        </div>
+                    </div>
+
+                    <h6 class="text-primary fw-semibold mb-3 border-bottom pb-2">Address Details (Decomposed 3NF)</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Street Address</label>
+                            <input type="text" name="street" class="form-control" value="{{ patient.street if patient else '' }}" placeholder="e.g. 12 Gandhi Road, Anna Nagar">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">City <span class="text-danger">*</span></label>
+                            <input type="text" name="city" class="form-control" required value="{{ patient.city if patient else '' }}" placeholder="e.g. Vellore">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Pincode (6 digits)</label>
+                            <input type="text" name="pincode" pattern="^[0-9]{6}$" class="form-control" value="{{ patient.pincode if patient else '' }}" placeholder="e.g. 632014">
+                        </div>
+                    </div>
+
+                    {% if not patient %}
+                    <h6 class="text-primary fw-semibold mb-3 border-bottom pb-2">Contact Information (Multivalued / Weak Entity)</h6>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Primary Phone Number <span class="text-danger">*</span></label>
+                            <input type="text" name="phone" class="form-control" required placeholder="e.g. 9876543210">
+                            <small class="text-muted">Inserted into <code>PATIENT_PHONE</code> table.</small>
+                        </div>
+                    </div>
+
+                    <h6 class="text-secondary fw-semibold mb-3 border-bottom pb-2">Emergency Contact (Weak Entity - Optional)</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label small">Contact Name</label>
+                            <input type="text" name="emergency_name" class="form-control" placeholder="e.g. Sunita Kumar">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small">Relationship</label>
+                            <input type="text" name="emergency_rel" class="form-control" placeholder="e.g. Spouse / Mother / Brother">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small">Contact Phone</label>
+                            <input type="text" name="emergency_phone" class="form-control" placeholder="e.g. 9876543211">
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Add New Phone Number</label>
+                            <input type="text" name="new_phone" class="form-control" placeholder="Add additional contact number">
+                            <small class="text-muted">Inserts row to <code>PATIENT_PHONE</code></small>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('patient.list_patients') }}" class="btn btn-light border">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-1"></i>{{ action }} Patient
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

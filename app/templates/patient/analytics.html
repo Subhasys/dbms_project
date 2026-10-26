@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Analytics &amp; Reports — CarePlus HMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold mb-1"><i class="bi bi-graph-up text-primary me-2"></i>Patient Module Analytics</h2>
+        <p class="text-muted mb-0">Live query demonstrations from the Oracle SQL specification.</p>
+    </div>
+    <a href="{{ url_for('patient.list_patients') }}" class="btn btn-outline-secondary">
+        &larr; Back to Patient List
+    </a>
+</div>
+
+<!-- Nav Tabs for queries -->
+<ul class="nav nav-pills mb-4" id="patientAnalyticsTab" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" id="senior-tab" data-bs-toggle="tab" data-bs-target="#senior" type="button">
+            <span class="badge bg-secondary me-1">Q2</span> Seniors (Age &ge; 50)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="phones-tab" data-bs-toggle="tab" data-bs-target="#phones" type="button">
+            <span class="badge bg-secondary me-1">Q11</span> Multiple Phones (HAVING)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="minus-tab" data-bs-toggle="tab" data-bs-target="#minus" type="button">
+            <span class="badge bg-secondary me-1">Q20</span> Never Admitted (MINUS)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="city-tab" data-bs-toggle="tab" data-bs-target="#city" type="button">
+            <span class="badge bg-secondary me-1">Q1</span> Vellore Patients
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="visits-tab" data-bs-toggle="tab" data-bs-target="#visits" type="button">
+            <span class="badge bg-secondary me-1">Q19</span> Visit History (Correlated)
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="patientAnalyticsTabContent">
+    <!-- Tab 1: Senior Patients (Q2) -->
+    <div class="tab-pane fade show active" id="senior" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q2. Simple Query on View: Senior Patients (Age &ge; 50)</span>
+                    <div class="text-muted small">Age is a derived attribute computed dynamically from DOB in view <code>v_patient_age</code>.</div>
+                </div>
+                <code>SELECT patient_id, name, dob, age FROM v_patient_age WHERE age &gt;= 50 ORDER BY age DESC</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Patient Name</th>
+                                <th>Date of Birth</th>
+                                <th>Derived Age</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in senior_patients %}
+                            <tr>
+                                <td>#{{ p.patient_id }}</td>
+                                <td class="fw-semibold">{{ p.name }}</td>
+                                <td>{{ p.dob.strftime('%d-%b-%Y') if p.dob else '' }}</td>
+                                <td><span class="badge bg-primary fs-6">{{ p.age }} yrs</span></td>
+                                <td>
+                                    <a href="{{ url_for('patient.view_patient', patient_id=p.patient_id) }}" class="btn btn-sm btn-outline-info">View Profile</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center py-3 text-muted">No patients aged 50+ found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: Multiple Phones (Q11) -->
+    <div class="tab-pane fade" id="phones" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q11. Aggregate + HAVING: Patients with Multiple Phone Numbers</span>
+                    <div class="text-muted small">Demonstrates normalization of multivalued attribute into separate table <code>PATIENT_PHONE</code>.</div>
+                </div>
+                <code>GROUP BY p.patient_id, p.name HAVING COUNT(*) &gt; 1</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Patient Name</th>
+                                <th>Phone Count</th>
+                                <th>Registered Numbers</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in multiple_phones %}
+                            <tr>
+                                <td>#{{ p.patient_id }}</td>
+                                <td class="fw-semibold">{{ p.patient_name }}</td>
+                                <td><span class="badge bg-success rounded-pill">{{ p.phone_count }} phones</span></td>
+                                <td><code>{{ p.phones }}</code></td>
+                                <td>
+                                    <a href="{{ url_for('patient.view_patient', patient_id=p.patient_id) }}" class="btn btn-sm btn-outline-info">View Profile</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center py-3 text-muted">No patients with multiple phones found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 3: Never Admitted (Q20 MINUS) -->
+    <div class="tab-pane fade" id="minus" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q20. Set Operator (MINUS): Booked Appointments But Never Admitted</span>
+                    <div class="text-muted small">Outpatient consultations only: (SELECT patient_id FROM appointment MINUS SELECT patient_id FROM admission).</div>
+                </div>
+                <code>WHERE patient_id IN (SELECT ... MINUS SELECT ...)</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Patient Name</th>
+                                <th>City</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in never_admitted %}
+                            <tr>
+                                <td>#{{ p.patient_id }}</td>
+                                <td class="fw-semibold">{{ p.patient_name }}</td>
+                                <td>{{ p.city }}</td>
+                                <td><span class="badge bg-info text-dark">Outpatient Only</span></td>
+                                <td>
+                                    <a href="{{ url_for('patient.view_patient', patient_id=p.patient_id) }}" class="btn btn-sm btn-outline-info">View Profile</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center py-3 text-muted">No matching patients found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 4: Vellore Patients (Q1) -->
+    <div class="tab-pane fade" id="city" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q1. Simple Query: Patients Living in Vellore</span>
+                    <div class="text-muted small">Simple filtering with WHERE and ORDER BY.</div>
+                </div>
+                <code>SELECT patient_id, name, gender, blood_group, city FROM patient WHERE city = 'Vellore' ORDER BY name</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Gender</th>
+                                <th>Blood Group</th>
+                                <th>City</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in city_patients %}
+                            <tr>
+                                <td>#{{ p.patient_id }}</td>
+                                <td class="fw-semibold">{{ p.name }}</td>
+                                <td>{{ p.gender }}</td>
+                                <td><span class="badge bg-danger">{{ p.blood_group }}</span></td>
+                                <td><i class="bi bi-geo-alt me-1"></i>{{ p.city }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center py-3 text-muted">No patients found in Vellore.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 5: Correlated Subquery Visits (Q19) -->
+    <div class="tab-pane fade" id="visits" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q19. Correlated Scalar Subqueries: Last Visit &amp; Visit Count</span>
+                    <div class="text-muted small">Each row calculates its own MAX(appt_date) and COUNT(*) using correlated scalar subqueries.</div>
+                </div>
+                <code>(SELECT MAX(a.appt_date) FROM appointment a WHERE a.patient_id = p.patient_id)</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Patient Name</th>
+                                <th>Total Visits</th>
+                                <th>Last Visit Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in patient_visits %}
+                            <tr>
+                                <td>#{{ p.patient_id }}</td>
+                                <td class="fw-semibold">{{ p.patient_name }}</td>
+                                <td><span class="badge bg-primary rounded-pill">{{ p.visits }} visits</span></td>
+                                <td>
+                                    {% if p.last_visit %}
+                                        <i class="bi bi-calendar-event me-1 text-muted"></i>{{ p.last_visit.strftime('%d-%b-%Y') }}
+                                    {% else %}
+                                        <span class="text-muted">No appointments</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('patient.view_patient', patient_id=p.patient_id) }}" class="btn btn-sm btn-outline-info">View Profile</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center py-3 text-muted">No visit records found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Prescribe Medicine — CarePlus HMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold fs-5">
+                    <i class="bi bi-clipboard2-pulse text-success me-2"></i>Prescribe Medicine to Patient
+                </span>
+                <span class="badge bg-secondary">sp_prescribe_medicine + trg_prescribe_update_stock</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info py-2 small mb-4">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <strong>Automated Business Logic:</strong> When a medicine is prescribed, trigger <code>trg_prescribe_update_stock</code> automatically deducts the quantity from inventory stock. If the medicine is expired or quantity exceeds available units, the trigger halts the transaction and raises a custom Oracle error.
+                </div>
+
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Patient Appointment <span class="text-danger">*</span></label>
+                        <select name="appointment_id" class="form-select" required>
+                            <option value="">-- Choose Consultation --</option>
+                            {% for a in appointments %}
+                                <option value="{{ a.appointment_id }}">
+                                    Appt #{{ a.appointment_id }} ({{ a.appt_date.strftime('%d-%b-%Y') }}) — {{ a.patient_name }} with {{ a.doctor_name }} [{{ a.status }}]
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Medicine <span class="text-danger">*</span></label>
+                        <select name="medicine_id" class="form-select" required>
+                            <option value="">-- Choose Medicine --</option>
+                            {% for m in medicines %}
+                                <option value="{{ m.medicine_id }}" {% if m.days_left < 0 %}class="text-danger bg-light"{% endif %}>
+                                    {{ m.medicine_name }} — Stock: {{ m.stock_qty }} units | Exp: {{ m.expiry_date.strftime('%d-%b-%Y') }}
+                                    {% if m.days_left < 0 %}[EXPIRED - Test Error Trigger]{% endif %}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Selecting an expired medicine or exceeding stock tests database trigger integrity.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Dosage Instructions <span class="text-danger">*</span></label>
+                        <input type="text" name="dosage" class="form-control" required placeholder="e.g. 500mg twice daily after meals">
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Duration (Days) <span class="text-danger">*</span></label>
+                            <input type="number" min="1" max="90" name="duration_days" class="form-control" required value="7">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Quantity to Dispense <span class="text-danger">*</span></label>
+                            <input type="number" min="1" name="quantity" class="form-control" required value="14">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('pharmacy.list_medicines') }}" class="btn btn-light border">&larr; Back to Pharmacy</a>
+                        <button type="submit" class="btn btn-success px-4">
+                            <i class="bi bi-check-circle me-1"></i>Dispense &amp; Record Prescription
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

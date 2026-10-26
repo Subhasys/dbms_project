@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Patient #{{ patient.patient_id }} — {{ patient.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <div class="d-flex align-items-center gap-2">
+            <h2 class="h3 fw-bold mb-0">{{ patient.name }}</h2>
+            <span class="badge bg-secondary">ID #{{ patient.patient_id }}</span>
+            {% if patient.blood_group %}
+                <span class="badge bg-danger">{{ patient.blood_group }}</span>
+            {% endif %}
+        </div>
+        <p class="text-muted mb-0">Registered patient profile &amp; clinical history.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('patient.edit_patient', patient_id=patient.patient_id) }}" class="btn btn-outline-primary">
+            <i class="bi bi-pencil me-1"></i>Edit
+        </a>
+        <a href="{{ url_for('appointment.book_appointment', patient_id=patient.patient_id) }}" class="btn btn-outline-success">
+            <i class="bi bi-calendar-plus me-1"></i>Book Appointment
+        </a>
+        <a href="{{ url_for('admission.admit_patient', patient_id=patient.patient_id) }}" class="btn btn-outline-warning">
+            <i class="bi bi-box-arrow-in-right me-1"></i>Admit to Room
+        </a>
+        <form method="POST" action="{{ url_for('patient.delete_patient', patient_id=patient.patient_id) }}" onsubmit="return confirm('Are you sure you want to delete this patient? (Will fail if patient has history)');">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash me-1"></i>Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Demographics -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold"><i class="bi bi-person me-2 text-primary"></i>Demographics</div>
+            <div class="card-body">
+                <table class="table table-borderless table-sm mb-0">
+                    <tr><th class="text-muted w-40">Gender:</th><td>{{ patient.gender }}</td></tr>
+                    <tr><th class="text-muted">DOB:</th><td>{{ patient.dob.strftime('%d-%b-%Y') if patient.dob else '' }}</td></tr>
+                    <tr><th class="text-muted">Age (derived):</th><td><strong>{{ patient.age }} years</strong></td></tr>
+                    <tr><th class="text-muted">Blood Group:</th><td>{{ patient.blood_group or 'Not recorded' }}</td></tr>
+                    <tr>
+                        <th class="text-muted">Address:</th>
+                        <td>{{ patient.street or '' }}<br>{{ patient.city }} - {{ patient.pincode or '' }}</td>
+                    </tr>
+                    <tr>
+                        <th class="text-muted">History:</th>
+                        <td><span class="badge bg-light text-dark border">{{ patient.medical_history }}</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phone Numbers (Multivalued) -->
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold"><i class="bi bi-telephone me-2 text-primary"></i>Phone Numbers (Multivalued)</div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush mb-0">
+                    {% for p in phones %}
+                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-phone me-2 text-muted"></i>{{ p }}</span>
+                        <span class="badge bg-light text-dark border">Phone</span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item px-0 text-muted">No phone numbers listed.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emergency Contacts (Weak Entity) -->
+    <div class="col-md-12 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold"><i class="bi bi-shield-exclamation me-2 text-danger"></i>Emergency Contact (Weak Entity)</div>
+            <div class="card-body">
+                {% for c in contacts %}
+                <div class="border rounded p-2 mb-2 bg-light">
+                    <div class="fw-bold">{{ c.contact_name }}</div>
+                    <div class="small text-muted">{{ c.relationship }}</div>
+                    <div class="small text-primary"><i class="bi bi-telephone-fill me-1"></i>{{ c.phone_no }}</div>
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">No emergency contacts registered.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Appointments History -->
+<div class="card mb-4">
+    <div class="card-header fw-bold"><i class="bi bi-calendar3 me-2 text-success"></i>Appointments ({{ appointments|length }})</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Date &amp; Time</th>
+                        <th>Doctor</th>
+                        <th>Diagnosis</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in appointments %}
+                    <tr>
+                        <td>#{{ a.appointment_id }}</td>
+                        <td>{{ a.appt_date.strftime('%d-%b-%Y') if a.appt_date else '' }} at {{ a.appt_time }}</td>
+                        <td>{{ a.doctor_name }}</td>
+                        <td>{{ a.diagnosis or '-' }}</td>
+                        <td>
+                            <span class="badge {% if a.status == 'Scheduled' %}bg-primary{% elif a.status == 'Completed' %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ a.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center py-3 text-muted">No appointment history.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Admissions History -->
+<div class="card mb-4">
+    <div class="card-header fw-bold"><i class="bi bi-hospital me-2 text-warning"></i>Admissions History ({{ admissions|length }})</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Room</th>
+                        <th>Admit Date</th>
+                        <th>Discharge Date</th>
+                        <th>Stay (Days)</th>
+                        <th>Reason</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ad in admissions %}
+                    <tr>
+                        <td>#{{ ad.admission_id }}</td>
+                        <td>Room {{ ad.room_no }} ({{ ad.room_type }})</td>
+                        <td>{{ ad.admit_date.strftime('%d-%b-%Y') if ad.admit_date else '' }}</td>
+                        <td>
+                            {% if ad.discharge_date %}
+                                {{ ad.discharge_date.strftime('%d-%b-%Y') }}
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Currently Admitted</span>
+                            {% endif %}
+                        </td>
+                        <td><strong>{{ ad.stay_days }}</strong> days</td>
+                        <td>{{ ad.reason }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center py-3 text-muted">No admission history.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Billing History -->
+<div class="card">
+    <div class="card-header fw-bold"><i class="bi bi-receipt me-2 text-info"></i>Billing History ({{ bills|length }})</div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Bill ID</th>
+                        <th>Date</th>
+                        <th class="text-end">Consultation</th>
+                        <th class="text-end">Medicine</th>
+                        <th class="text-end">Room</th>
+                        <th class="text-end">Total Amount</th>
+                        <th>Payment Mode</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for b in bills %}
+                    <tr>
+                        <td>#{{ b.bill_id }}</td>
+                        <td>{{ b.bill_date.strftime('%d-%b-%Y') if b.bill_date else '' }}</td>
+                        <td class="text-end">₹{{ "%.2f"|format(b.consultation_charge) }}</td>
+                        <td class="text-end">₹{{ "%.2f"|format(b.medicine_charge) }}</td>
+                        <td class="text-end">₹{{ "%.2f"|format(b.room_charge) }}</td>
+                        <td class="text-end fw-bold">₹{{ "%.2f"|format(b.total_amount) }}</td>
+                        <td>{{ b.payment_mode or 'Pending' }}</td>
+                        <td>
+                            <span class="badge {% if b.payment_status == 'Paid' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                {{ b.payment_status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center py-3 text-muted">No bills generated.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

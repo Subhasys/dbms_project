@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Discharge &amp; Bill Patient — CarePlus HMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold fs-5">
+                    <i class="bi bi-box-arrow-right text-danger me-2"></i>Discharge Patient &amp; Generate Final Bill
+                </span>
+                <span class="badge bg-secondary">sp_discharge_and_bill</span>
+            </div>
+            <div class="card-body p-4">
+                <!-- Admission Summary Box -->
+                <div class="bg-light border rounded p-3 mb-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-primary mb-1">{{ admission.patient_name }}</h6>
+                            <div class="small text-muted">Admission #{{ admission.admission_id }} · Patient ID #{{ admission.patient_id }}</div>
+                            <div class="small mt-2"><strong>Reason:</strong> {{ admission.reason }}</div>
+                        </div>
+                        <div class="col-md-6 border-start">
+                            <div class="small"><strong>Room:</strong> Room {{ admission.room_no }} ({{ admission.room_type }})</div>
+                            <div class="small"><strong>Admitted On:</strong> {{ admission.admit_date.strftime('%d-%b-%Y') }}</div>
+                            <div class="small"><strong>Days Stayed:</strong> {{ admission.stay_days }} days</div>
+                            <div class="small text-danger fw-bold mt-1">Calculated Room Charge: ₹{{ "%.2f"|format(calculated_room_charge) }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info py-2 small mb-4">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <strong>Automated Action:</strong> Calling <code>sp_discharge_and_bill</code> records discharge date, calculates room charge (<code>fn_calc_room_charge</code>), consultation charge, and prescribed medicine charge (<code>fn_medicine_charge</code>). Trigger <code>trg_admission_free_room</code> marks Room {{ admission.room_no }} back to <code>Available</code>.
+                </div>
+
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Link Related Outpatient Consultation (Optional)</label>
+                        <select name="appointment_id" class="form-select">
+                            <option value="">-- No Consultation / Medicine Charges (Room Only) --</option>
+                            {% for ap in patient_appointments %}
+                                <option value="{{ ap.appointment_id }}">
+                                    Appt #{{ ap.appointment_id }} ({{ ap.appt_date.strftime('%d-%b-%Y') }}) — {{ ap.doctor_name }} (Consultation: ₹{{ "%.2f"|format(ap.consultation_fee) }}, Medicines: ₹{{ "%.2f"|format(ap.medicine_charge) }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Charges from this consultation and its prescribed medicines will be summed into the invoice.</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Payment Settlement</label>
+                        <select name="payment_mode" class="form-select">
+                            <option value="">Leave as 'Pending' (Payment to be collected later)</option>
+                            <option value="Cash">Cash (Immediate Settlement)</option>
+                            <option value="Card">Credit / Debit Card</option>
+                            <option value="UPI">UPI / Digital QR</option>
+                            <option value="Insurance">TPA Health Insurance</option>
+                        </select>
+                        <small class="text-muted">Selecting a mode automatically marks the invoice as <strong>Paid</strong>. Leaving empty leaves it <strong>Pending</strong>.</small>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('admission.list_admissions') }}" class="btn btn-light border">&larr; Cancel</a>
+                        <button type="submit" class="btn btn-danger px-4" onclick="return confirm('Confirm patient discharge and generate invoice?');">
+                            <i class="bi bi-receipt me-1"></i>Discharge &amp; Finalize Bill
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

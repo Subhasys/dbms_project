@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Billing &amp; Admission Analytics — CarePlus HMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold mb-1"><i class="bi bi-cash-stack text-primary me-2"></i>Admission &amp; Billing Analytics</h2>
+        <p class="text-muted mb-0">Nested subqueries, analytic ranking functions, and aggregated financial reports.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('admission.list_bills') }}" class="btn btn-outline-secondary">
+            &larr; Back to Bills
+        </a>
+    </div>
+</div>
+
+<ul class="nav nav-pills mb-4" id="billingAnalyticsTab" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" id="rank-tab" data-bs-toggle="tab" data-bs-target="#rank" type="button">
+            <span class="badge bg-secondary me-1">Q24</span> Top Billed Patients (RANK)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="aboveavg-tab" data-bs-toggle="tab" data-bs-target="#aboveavg" type="button">
+            <span class="badge bg-secondary me-1">Q18</span> Above Average Bills (Nested)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="modes-tab" data-bs-toggle="tab" data-bs-target="#modes" type="button">
+            <span class="badge bg-secondary me-1">Q14</span> Revenue by Mode (NVL)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button">
+            <span class="badge bg-secondary me-1">Q13</span> Bills by Status (View)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="icu-tab" data-bs-toggle="tab" data-bs-target="#icu" type="button">
+            <span class="badge bg-secondary me-1">Q16</span> ICU Inpatients (Nested IN)
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="billingAnalyticsTabContent">
+    <!-- Tab 1: Q24 Top Billed Patients (RANK) -->
+    <div class="tab-pane fade show active" id="rank" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q24. Analytic Function: Top 5 Patients by Total Amount Billed</span>
+                    <div class="text-muted small">Uses <code>RANK() OVER (ORDER BY SUM(total_amount) DESC)</code> partitioned over invoices.</div>
+                </div>
+                <code>RANK() OVER (ORDER BY SUM(b.total_amount) DESC) AS bill_rank</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center">Rank</th>
+                                <th>Patient Name</th>
+                                <th class="text-end">Total Amount Billed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in top_billed_patients %}
+                            <tr>
+                                <td class="text-center">
+                                    {% if p.bill_rank == 1 %}
+                                        <span class="badge bg-warning text-dark fs-6"><i class="bi bi-trophy-fill me-1"></i>#1</span>
+                                    {% elif p.bill_rank == 2 %}
+                                        <span class="badge bg-secondary fs-6">#2</span>
+                                    {% elif p.bill_rank == 3 %}
+                                        <span class="badge bg-danger bg-opacity-75 fs-6">#3</span>
+                                    {% else %}
+                                        <span class="badge bg-light text-dark border">#{{ p.bill_rank }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold text-primary">{{ p.patient_name }}</td>
+                                <td class="text-end fw-bold fs-6">₹{{ "%.2f"|format(p.total_billed) }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="text-center py-3 text-muted">No billing data found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: Q18 Above Average Bills -->
+    <div class="tab-pane fade" id="aboveavg" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q18. Nested Subquery on View: Bills Above Average Amount</span>
+                    <div class="text-muted small">Filters for high-value invoices that exceed the overall hospital mean invoice value.</div>
+                </div>
+                <code>WHERE b.total_amount &gt; (SELECT AVG(total_amount) FROM v_bill_total)</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Bill ID</th>
+                                <th>Patient Name</th>
+                                <th class="text-end">Total Amount</th>
+                                <th>Payment Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for b in above_avg_bills %}
+                            <tr>
+                                <td class="fw-bold text-muted">#{{ b.bill_id }}</td>
+                                <td class="fw-semibold">{{ b.patient_name }}</td>
+                                <td class="text-end fw-bold text-danger">₹{{ "%.2f"|format(b.total_amount) }}</td>
+                                <td>
+                                    <span class="badge {% if b.payment_status == 'Paid' %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                        {{ b.payment_status }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center py-3 text-muted">No bills found above average.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 3: Q14 Revenue by Payment Mode -->
+    <div class="tab-pane fade" id="modes" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q14. Aggregate + NVL: Revenue by Payment Mode</span>
+                    <div class="text-muted small">Groups collections by payment channel, transforming NULLs to 'Not yet paid' via NVL.</div>
+                </div>
+                <code>GROUP BY NVL(payment_mode, 'Not yet paid')</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Payment Mode / Channel</th>
+                                <th class="text-center">Number of Invoices</th>
+                                <th class="text-end">Total Revenue Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in revenue_by_mode %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    {% if m.payment_mode == 'Not yet paid' %}
+                                        <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>{{ m.payment_mode }}</span>
+                                    {% else %}
+                                        <span class="badge bg-success"><i class="bi bi-wallet2 me-1"></i>{{ m.payment_mode }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center fw-bold">{{ m.no_of_bills }}</td>
+                                <td class="text-end fw-bold text-primary">₹{{ "%.2f"|format(m.total_amount) }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="text-center py-3 text-muted">No revenue records found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 4: Q13 Bills by Status -->
+    <div class="tab-pane fade" id="status" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q13. Aggregate on View: Bills and Volume by Payment Status</span>
+                    <div class="text-muted small">Direct aggregation on view <code>v_bill_total</code> comparing Paid vs Pending collections.</div>
+                </div>
+                <code>SELECT payment_status, COUNT(*), SUM(total_amount) FROM v_bill_total GROUP BY payment_status</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Payment Status</th>
+                                <th class="text-center">Count of Bills</th>
+                                <th class="text-end">Total Sum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in bills_by_status %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    <span class="badge {% if s.payment_status == 'Paid' %}bg-success{% else %}bg-warning text-dark{% endif %} fs-6">
+                                        {{ s.payment_status }}
+                                    </span>
+                                </td>
+                                <td class="text-center fw-bold">{{ s.no_of_bills }}</td>
+                                <td class="text-end fw-bold text-primary">₹{{ "%.2f"|format(s.total_amount) }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="text-center py-3 text-muted">No bills data found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 5: Q16 ICU Inpatients -->
+    <div class="tab-pane fade" id="icu" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q16. Nested Query (IN with Join): Patients Admitted to ICU</span>
+                    <div class="text-muted small">Retrieves patients who have at least one admission record tied to an Intensive Care Unit room.</div>
+                </div>
+                <code>WHERE patient_id IN (SELECT a.patient_id FROM admission a JOIN room r ON r.room_no = a.room_no WHERE r.room_type = 'ICU')</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Patient ID</th>
+                                <th>Patient Name</th>
+                                <th>Blood Group</th>
+                                <th>Medical History</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in icu_patients %}
+                            <tr>
+                                <td>#{{ p.patient_id }}</td>
+                                <td class="fw-bold text-primary">{{ p.patient_name }}</td>
+                                <td><span class="badge bg-danger">{{ p.blood_group }}</span></td>
+                                <td><span class="badge bg-light text-dark border">{{ p.medical_history }}</span></td>
+                                <td>
+                                    <a href="{{ url_for('patient.view_patient', patient_id=p.patient_id) }}" class="btn btn-sm btn-outline-info">View Record</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center py-3 text-muted">No ICU admissions found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

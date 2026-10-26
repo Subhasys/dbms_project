@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Admit Patient to Room — CarePlus HMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold fs-5">
+                    <i class="bi bi-box-arrow-in-right text-warning me-2"></i>Admit Inpatient to Room
+                </span>
+                <span class="badge bg-secondary">Procedure: sp_admit_patient</span>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info py-2 small mb-4">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <strong>Automated Business Rules:</strong> Room must be in <code>Available</code> status (checked by procedure and trigger <code>trg_admission_check_room</code>). Upon admission, trigger <code>trg_admission_occupy_room</code> automatically marks the room as <code>Occupied</code>. A patient cannot have two active concurrent admissions.
+                </div>
+
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Patient <span class="text-danger">*</span></label>
+                        <select name="patient_id" class="form-select" required>
+                            <option value="">-- Choose Patient --</option>
+                            {% for p in patients %}
+                                <option value="{{ p.patient_id }}" {% if prefill_patient_id == p.patient_id|string %}selected{% endif %}>
+                                    #{{ p.patient_id }} — {{ p.name }} ({{ p.city }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Room <span class="text-danger">*</span></label>
+                        <select name="room_no" class="form-select" required>
+                            <option value="">-- Choose Room --</option>
+                            {% for r in rooms %}
+                                <option value="{{ r.room_no }}" {% if r.status != 'Available' %}class="text-muted bg-light"{% endif %}>
+                                    Room {{ r.room_no }} — {{ r.room_type }} (₹{{ "%.0f"|format(r.charge_per_day) }}/day) [Status: {{ r.status }}]
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Selecting an Occupied or Maintenance room will trigger a database exception for testing!</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Reason for Admission <span class="text-danger">*</span></label>
+                        <textarea name="reason" rows="3" class="form-control" required placeholder="e.g. Acute myocardial infarction, observation, post-operative recovery..."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{{ url_for('admission.list_admissions') }}" class="btn btn-light border">&larr; Back to Admissions</a>
+                        <button type="submit" class="btn btn-warning px-4">
+                            <i class="bi bi-hospital me-1"></i>Admit Patient
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

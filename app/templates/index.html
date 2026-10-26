@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — CarePlus Hospital Management System{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="h3 fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i>Hospital Operations Dashboard</h2>
+        <p class="text-muted mb-0">Overview of patients, appointments, admissions, pharmacy and revenue.</p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <div class="btn-group">
+            <a href="{{ url_for('patient.add_patient') }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-person-plus me-1"></i>New Patient</a>
+            <a href="{{ url_for('appointment.book_appointment') }}" class="btn btn-outline-success btn-sm"><i class="bi bi-calendar-plus me-1"></i>Book Slot</a>
+            <a href="{{ url_for('admission.admit_patient') }}" class="btn btn-outline-warning btn-sm"><i class="bi bi-box-arrow-in-right me-1"></i>Admit</a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card border-start border-primary border-4 p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Registered Patients</span>
+                    <h3 class="fw-bold mb-0 mt-1">{{ stats.patients }}</h3>
+                </div>
+                <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-circle">
+                    <i class="bi bi-people-fill fs-3"></i>
+                </div>
+            </div>
+            <div class="mt-2 small">
+                <a href="{{ url_for('patient.list_patients') }}" class="text-decoration-none">Manage patients &rarr;</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card border-start border-warning border-4 p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Active Admissions</span>
+                    <h3 class="fw-bold mb-0 mt-1">{{ stats.active_admissions }}</h3>
+                </div>
+                <div class="bg-warning bg-opacity-10 text-warning p-3 rounded-circle">
+                    <i class="bi bi-hospital-fill fs-3"></i>
+                </div>
+            </div>
+            <div class="mt-2 small">
+                <a href="{{ url_for('admission.list_admissions') }}" class="text-decoration-none text-warning">View active stays &rarr;</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card border-start border-danger border-4 p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Pending Bills</span>
+                    <h3 class="fw-bold mb-0 mt-1">{{ stats.pending_bills }}</h3>
+                </div>
+                <div class="bg-danger bg-opacity-10 text-danger p-3 rounded-circle">
+                    <i class="bi bi-receipt fs-3"></i>
+                </div>
+            </div>
+            <div class="mt-2 small text-muted">
+                Due: <strong>₹{{ "%.2f"|format(stats.pending_amount) }}</strong> · <a href="{{ url_for('admission.list_bills') }}" class="text-danger text-decoration-none">Collect &rarr;</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card border-start border-success border-4 p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Available Rooms</span>
+                    <h3 class="fw-bold mb-0 mt-1">{{ stats.available_rooms }}</h3>
+                </div>
+                <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle">
+                    <i class="bi bi-door-open-fill fs-3"></i>
+                </div>
+            </div>
+            <div class="mt-2 small">
+                <a href="{{ url_for('admission.admit_patient') }}" class="text-success text-decoration-none">Admit to room &rarr;</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Room Availability Breakdown (Q12) -->
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-door-closed text-primary fs-5"></i>
+                    <span class="fw-bold">Room Inventory &amp; Status</span>
+                </div>
+                <span class="badge bg-secondary">Query Q12: SUM(CASE...)</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Room Type</th>
+                                <th class="text-end">Daily Rate</th>
+                                <th class="text-center">Total</th>
+                                <th class="text-center text-success">Available</th>
+                                <th class="text-center text-warning">Occupied</th>
+                                <th class="text-center text-muted">Maintenance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in room_summary %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    {% if r.room_type == 'ICU' %}
+                                        <span class="badge bg-danger text-white me-1">ICU</span> Intensive Care Unit
+                                    {% elif r.room_type == 'Private' %}
+                                        <span class="badge bg-info text-dark me-1">Private</span> Single AC Room
+                                    {% else %}
+                                        <span class="badge bg-secondary text-white me-1">{{ r.room_type }}</span> Ward
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">₹{{ "%.2f"|format(r.daily_charge) }}</td>
+                                <td class="text-center fw-bold">{{ r.total_rooms }}</td>
+                                <td class="text-center"><span class="badge bg-success">{{ r.available }}</span></td>
+                                <td class="text-center"><span class="badge bg-warning text-dark">{{ r.occupied }}</span></td>
+                                <td class="text-center"><span class="badge bg-secondary">{{ r.maintenance }}</span></td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="6" class="text-center py-3 text-muted">No room data found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Appointments -->
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center py-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-calendar3 text-success fs-5"></i>
+                    <span class="fw-bold">Recent Appointments</span>
+                </div>
+                <a href="{{ url_for('appointment.list_appointments') }}" class="small text-decoration-none">View all</a>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for a in recent_appts %}
+                    <li class="list-group-item d-flex justify-content-between align-items-start py-3">
+                        <div>
+                            <div class="fw-semibold">{{ a.patient_name }}</div>
+                            <div class="text-muted small"><i class="bi bi-person-badge me-1"></i>{{ a.doctor_name }}</div>
+                            <div class="text-secondary small">
+                                <i class="bi bi-clock me-1"></i>{{ a.appt_date.strftime('%d-%b-%Y') if a.appt_date else '' }} at {{ a.appt_time }}
+                            </div>
+                        </div>
+                        <span class="badge {% if a.status == 'Scheduled' %}bg-primary{% elif a.status == 'Completed' %}bg-success{% else %}bg-danger{% endif %}">
+                            {{ a.status }}
+                        </span>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item text-center py-4 text-muted">No appointments found.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Department Overview (Q8) -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center py-3">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-building text-info fs-5"></i>
+            <span class="fw-bold">Department Statistics &amp; Doctor Fees</span>
+        </div>
+        <span class="badge bg-secondary">Query Q8: Outer Join + AVG/MAX</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Department</th>
+                        <th>Hospital Location</th>
+                        <th class="text-center">Doctors Staffed</th>
+                        <th class="text-end">Average Fee</th>
+                        <th class="text-end">Max Fee</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in dept_summary %}
+                    <tr>
+                        <td class="fw-semibold">{{ d.dept_name }}</td>
+                        <td><i class="bi bi-geo-alt text-muted me-1"></i>{{ d.location }}</td>
+                        <td class="text-center">
+                            {% if d.doctors > 0 %}
+                                <span class="badge bg-primary rounded-pill">{{ d.doctors }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary rounded-pill">0 (Unstaffed)</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">₹{{ "%.2f"|format(d.avg_fee) }}</td>
+                        <td class="text-end">₹{{ "%.2f"|format(d.max_fee) }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center py-3 text-muted">No departments found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

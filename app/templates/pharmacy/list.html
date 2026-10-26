@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Pharmacy Inventory — CarePlus HMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="h3 fw-bold mb-1"><i class="bi bi-capsule text-primary me-2"></i>Pharmacy Inventory &amp; Stock</h2>
+        <p class="text-muted mb-0">Track shelf status with SQL date arithmetic and CASE statements (Query Q22).</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('pharmacy.analytics') }}" class="btn btn-outline-info">
+            <i class="bi bi-pie-chart me-1"></i>Pharmacy Analytics
+        </a>
+        <a href="{{ url_for('pharmacy.alerts') }}" class="btn btn-outline-warning text-dark">
+            <i class="bi bi-exclamation-triangle me-1"></i>Stock Alerts
+        </a>
+        <a href="{{ url_for('pharmacy.prescribe') }}" class="btn btn-outline-success">
+            <i class="bi bi-clipboard2-pulse me-1"></i>Prescribe Medicine
+        </a>
+        <a href="{{ url_for('pharmacy.add_medicine') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Add Medicine
+        </a>
+    </div>
+</div>
+
+<!-- Search & Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('pharmacy.list_medicines') }}" class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold">Search Medicine / Manufacturer</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Search by name or company..." value="{{ search }}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Shelf &amp; Stock Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Stock</option>
+                    <option value="EXPIRED" {% if status_filter == 'EXPIRED' %}selected{% endif %}>Expired Only</option>
+                    <option value="EXPIRING SOON" {% if status_filter == 'EXPIRING SOON' %}selected{% endif %}>Expiring within 3 Months</option>
+                    <option value="LOW STOCK" {% if status_filter == 'LOW STOCK' %}selected{% endif %}>Low Stock (&lt; 50 units)</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-secondary flex-grow-1"><i class="bi bi-funnel me-1"></i>Filter</button>
+                {% if search or status_filter %}
+                    <a href="{{ url_for('pharmacy.list_medicines') }}" class="btn btn-outline-secondary">Reset</a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Medicines Table (Q22) -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center py-3">
+        <span class="fw-bold">Medicines ({{ medicines|length }})</span>
+        <span class="badge bg-secondary">Query Q22: SQL Date Arithmetic + CASE (Shelf Status)</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Medicine Name</th>
+                        <th>Manufacturer</th>
+                        <th class="text-end">Unit Price</th>
+                        <th class="text-center">Stock Qty</th>
+                        <th>Expiry Date</th>
+                        <th>Days Left</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in medicines %}
+                    <tr>
+                        <td class="fw-bold text-muted">#{{ m.medicine_id }}</td>
+                        <td class="fw-semibold text-primary">{{ m.medicine_name }}</td>
+                        <td>{{ m.manufacturer }}</td>
+                        <td class="text-end">₹{{ "%.2f"|format(m.unit_price) }}</td>
+                        <td class="text-center">
+                            {% if m.stock_qty < 50 %}
+                                <span class="badge bg-danger rounded-pill">{{ m.stock_qty }} units (Low)</span>
+                            {% else %}
+                                <span class="badge bg-success rounded-pill">{{ m.stock_qty }} units</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ m.expiry_date.strftime('%d-%b-%Y') if m.expiry_date else '' }}</td>
+                        <td>
+                            {% if m.days_left < 0 %}
+                                <span class="text-danger fw-bold">{{ m.days_left|abs }} days ago</span>
+                            {% elif m.days_left <= 90 %}
+                                <span class="text-warning fw-bold">{{ m.days_left }} days left</span>
+                            {% else %}
+                                <span class="text-muted">{{ m.days_left }} days</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if m.shelf_status == 'EXPIRED' %}
+                                <span class="badge bg-danger text-white">EXPIRED</span>
+                            {% elif m.shelf_status == 'EXPIRING SOON' %}
+                                <span class="badge bg-warning text-dark">EXPIRING SOON</span>
+                            {% else %}
+                                <span class="badge bg-success text-white">ACTIVE</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <form method="POST" action="{{ url_for('pharmacy.delete_medicine', medicine_id=m.medicine_id) }}" class="d-inline" onsubmit="return confirm('Delete medicine #{{ m.medicine_id }}? (Fails if referenced in prescriptions)');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Medicine">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4 text-muted">No medicines found matching criteria.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

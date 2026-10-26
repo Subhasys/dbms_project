@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Appointment Analytics — CarePlus HMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold mb-1"><i class="bi bi-bar-chart text-success me-2"></i>Appointment Analytics &amp; Reports</h2>
+        <p class="text-muted mb-0">Aggregate queries, nested subqueries, and SQL string/date transformations.</p>
+    </div>
+    <a href="{{ url_for('appointment.list_appointments') }}" class="btn btn-outline-secondary">
+        &larr; Back to Appointments
+    </a>
+</div>
+
+<ul class="nav nav-pills mb-4" id="apptAnalyticsTab" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" id="busy-tab" data-bs-toggle="tab" data-bs-target="#busy" type="button">
+            <span class="badge bg-secondary me-1">Q7</span> Busy Doctors (HAVING &ge; 2)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="idle-tab" data-bs-toggle="tab" data-bs-target="#idle" type="button">
+            <span class="badge bg-secondary me-1">Q17</span> Unassigned Doctors (NOT EXISTS)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="monthly-tab" data-bs-toggle="tab" data-bs-target="#monthly" type="button">
+            <span class="badge bg-secondary me-1">Q23</span> Monthly Breakdown (TO_CHAR)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="strings-tab" data-bs-toggle="tab" data-bs-target="#strings" type="button">
+            <span class="badge bg-secondary me-1">Q21</span> Doctor String Functions
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="apptAnalyticsTabContent">
+    <!-- Tab 1: Q7 Busy Doctors -->
+    <div class="tab-pane fade show active" id="busy" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q7. GROUP BY + HAVING: Doctors With Two or More Appointments</span>
+                    <div class="text-muted small">Aggregates consultation schedule by doctor, filtering with HAVING COUNT(*) &ge; 2.</div>
+                </div>
+                <code>GROUP BY d.doctor_id, d.name, d.specialization HAVING COUNT(*) &gt;= 2</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Doctor ID</th>
+                                <th>Doctor Name</th>
+                                <th>Specialization</th>
+                                <th class="text-center">Total Appointments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in busy_doctors %}
+                            <tr>
+                                <td>#{{ d.doctor_id }}</td>
+                                <td class="fw-semibold text-primary">{{ d.doctor_name }}</td>
+                                <td>{{ d.specialization }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-success rounded-pill fs-6">{{ d.total_appointments }} bookings</span>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center py-3 text-muted">No doctors with &ge; 2 appointments found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: Q17 NOT EXISTS Idle Doctors -->
+    <div class="tab-pane fade" id="idle" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q17. Nested Subquery (NOT EXISTS): Doctors With No Appointments</span>
+                    <div class="text-muted small">Finds clinicians who currently have zero bookings scheduled in the system.</div>
+                </div>
+                <code>WHERE NOT EXISTS (SELECT 1 FROM appointment a WHERE a.doctor_id = d.doctor_id)</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Doctor ID</th>
+                                <th>Doctor Name</th>
+                                <th>Specialization</th>
+                                <th>Department</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in idle_doctors %}
+                            <tr>
+                                <td>#{{ d.doctor_id }}</td>
+                                <td class="fw-semibold">{{ d.doctor_name }}</td>
+                                <td>{{ d.specialization }}</td>
+                                <td>{{ d.dept_name }}</td>
+                                <td><span class="badge bg-secondary">Available / No Bookings</span></td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center py-3 text-muted">All doctors have at least one appointment.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 3: Q23 Monthly Breakdown -->
+    <div class="tab-pane fade" id="monthly" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q23. Date Function (TO_CHAR) + GROUP BY: Appointments by Month</span>
+                    <div class="text-muted small">Breaks down total volume and status distribution (Completed, Scheduled, Cancelled) per month.</div>
+                </div>
+                <code>GROUP BY TO_CHAR(appt_date, 'YYYY-MM')</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Month (YYYY-MM)</th>
+                                <th class="text-center">Total Volume</th>
+                                <th class="text-center text-success">Completed</th>
+                                <th class="text-center text-primary">Scheduled</th>
+                                <th class="text-center text-danger">Cancelled</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in monthly_trends %}
+                            <tr>
+                                <td class="fw-bold"><i class="bi bi-calendar3 me-2 text-muted"></i>{{ m.appt_month }}</td>
+                                <td class="text-center fw-bold">{{ m.total }}</td>
+                                <td class="text-center"><span class="badge bg-success">{{ m.completed }}</span></td>
+                                <td class="text-center"><span class="badge bg-primary">{{ m.scheduled }}</span></td>
+                                <td class="text-center"><span class="badge bg-danger">{{ m.cancelled }}</span></td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center py-3 text-muted">No monthly trend data.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 4: Q21 Doctor String Functions -->
+    <div class="tab-pane fade" id="strings" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q21. SQL String Functions: UPPER, LENGTH, SUBSTR, INSTR, and || Concatenation</span>
+                    <div class="text-muted small">Demonstrates parsing emails into usernames and domains, length calculations, and masking sensitive phone digits.</div>
+                </div>
+                <code>SUBSTR(email, 1, INSTR(email, '@') - 1), 'XXXXXX' || SUBSTR(phone, -4)</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>UPPER(Name)</th>
+                                <th class="text-center">LENGTH</th>
+                                <th>Extracted Username</th>
+                                <th>Email Domain</th>
+                                <th>Masked Phone Number</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in doctor_strings %}
+                            <tr>
+                                <td class="fw-semibold">{{ doc.doctor_name }}</td>
+                                <td class="text-center">{{ doc.name_length }} chars</td>
+                                <td><code>{{ doc.username }}</code></td>
+                                <td><span class="badge bg-light text-dark border">{{ doc.domain }}</span></td>
+                                <td><code>{{ doc.masked_phone }}</code></td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="5" class="text-center py-3 text-muted">No doctor records.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

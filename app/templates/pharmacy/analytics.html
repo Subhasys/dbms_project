@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Pharmacy Analytics — CarePlus HMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 fw-bold mb-1"><i class="bi bi-pie-chart text-primary me-2"></i>Pharmacy Analytics &amp; Reports</h2>
+        <p class="text-muted mb-0">Prescription statistics, cost calculations, and multi-table join reports.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('pharmacy.list_medicines') }}" class="btn btn-outline-secondary">
+            &larr; Back to Pharmacy
+        </a>
+    </div>
+</div>
+
+<ul class="nav nav-pills mb-4" id="pharmacyAnalyticsTab" role="tablist">
+    <li class="nav-item">
+        <button class="nav-link active" id="prescribed-tab" data-bs-toggle="tab" data-bs-target="#prescribed" type="button">
+            <span class="badge bg-secondary me-1">Q10</span> Most Prescribed (Aggregate)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="linecost-tab" data-bs-toggle="tab" data-bs-target="#linecost" type="button">
+            <span class="badge bg-secondary me-1">Q5</span> Line Costs (4-Table Join)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="appttotal-tab" data-bs-toggle="tab" data-bs-target="#appttotal" type="button">
+            <span class="badge bg-secondary me-1">Q9</span> Total Per Appt (SUM Join)
+        </button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" id="aboveavgfee-tab" data-bs-toggle="tab" data-bs-target="#aboveavgfee" type="button">
+            <span class="badge bg-secondary me-1">Q15</span> High-Fee Doctors (Scalar Subquery)
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="pharmacyAnalyticsTabContent">
+    <!-- Tab 1: Q10 Most Prescribed -->
+    <div class="tab-pane fade show active" id="prescribed" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q10. Aggregate: Most Prescribed Medicines</span>
+                    <div class="text-muted small">Aggregates prescription history counting times prescribed and summing total units dispensed.</div>
+                </div>
+                <code>COUNT(*) AS times_prescribed, SUM(pr.quantity) AS total_quantity</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Medicine Name</th>
+                                <th class="text-center">Times Prescribed</th>
+                                <th class="text-center">Total Quantity Dispensed</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in most_prescribed %}
+                            <tr>
+                                <td class="fw-semibold text-primary">{{ m.medicine_name }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary rounded-pill fs-6">{{ m.times_prescribed }} visits</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border fs-6">{{ m.total_quantity }} units</span>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="text-center py-3 text-muted">No prescriptions recorded.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 2: Q5 Line Costs (4-Table Join) -->
+    <div class="tab-pane fade" id="linecost" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q5. 4-Table Join with Arithmetic: Line Cost Breakdown</span>
+                    <div class="text-muted small">Joins <code>PRESCRIBES &times; MEDICINE &times; APPOINTMENT &times; PATIENT</code>, calculating line item subtotal.</div>
+                </div>
+                <code>pr.quantity * m.unit_price AS line_cost</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Appt ID</th>
+                                <th>Patient Name</th>
+                                <th>Medicine</th>
+                                <th>Dosage Instructions</th>
+                                <th class="text-center">Qty</th>
+                                <th class="text-end">Unit Price</th>
+                                <th class="text-end">Line Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for lc in line_costs %}
+                            <tr>
+                                <td>#{{ lc.appointment_id }}</td>
+                                <td class="fw-semibold">{{ lc.patient_name }}</td>
+                                <td>{{ lc.medicine_name }}</td>
+                                <td><small class="text-muted">{{ lc.dosage }}</small></td>
+                                <td class="text-center">{{ lc.quantity }}</td>
+                                <td class="text-end text-muted">₹{{ "%.2f"|format(lc.unit_price) }}</td>
+                                <td class="text-end fw-bold text-success">₹{{ "%.2f"|format(lc.line_cost) }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="7" class="text-center py-3 text-muted">No prescription lines found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 3: Q9 Aggregate Total per Appointment -->
+    <div class="tab-pane fade" id="appttotal" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q9. Aggregate SUM: Total Medicine Charges per Appointment</span>
+                    <div class="text-muted small">Computes the total pharmaceutical bill per consultation (mirrored in <code>fn_medicine_charge</code>).</div>
+                </div>
+                <code>SUM(pr.quantity * m.unit_price) AS medicine_total</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Appointment ID</th>
+                                <th>Patient Name</th>
+                                <th class="text-end">Total Medicine Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for at in appt_totals %}
+                            <tr>
+                                <td class="fw-bold">#{{ at.appointment_id }}</td>
+                                <td class="fw-semibold">{{ at.patient_name }}</td>
+                                <td class="text-end fw-bold text-primary fs-6">₹{{ "%.2f"|format(at.medicine_total) }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="text-center py-3 text-muted">No appointments with prescriptions.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab 4: Q15 High-Fee Doctors -->
+    <div class="tab-pane fade" id="aboveavgfee" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="fw-bold">Q15. Nested Scalar Subquery: Doctors Charging Above Average Fee</span>
+                    <div class="text-muted small">Finds doctors whose individual consultation fee exceeds the overall hospital mean.</div>
+                </div>
+                <code>WHERE consultation_fee &gt; (SELECT AVG(consultation_fee) FROM doctor)</code>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Doctor ID</th>
+                                <th>Doctor Name</th>
+                                <th>Specialization</th>
+                                <th class="text-end">Consultation Fee</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in high_fee_doctors %}
+                            <tr>
+                                <td>#{{ d.doctor_id }}</td>
+                                <td class="fw-semibold text-primary">{{ d.doctor_name }}</td>
+                                <td>{{ d.specialization }}</td>
+                                <td class="text-end fw-bold text-success fs-6">₹{{ "%.2f"|format(d.consultation_fee) }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center py-3 text-muted">No doctors found above average fee.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
