@@ -1,0 +1,356 @@
+SQL> @E:\hospital_db\01_schema.sql
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+Table created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+Sequence created.
+
+
+View created.
+
+
+View created.
+
+
+View created.
+
+SQL> SET LINESIZE 150
+SQL> SELECT table_name FROM user_tables ORDER BY table_name;
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+ADMISSION                                                                                                                                             
+APPOINTMENT                                                                                                                                           
+AQ$_INTERNET_AGENTS                                                                                                                                   
+AQ$_INTERNET_AGENT_PRIVS                                                                                                                              
+AQ$_KEY_SHARD_MAP                                                                                                                                     
+AQ$_QUEUES                                                                                                                                            
+AQ$_QUEUE_TABLES                                                                                                                                      
+AQ$_SCHEDULES                                                                                                                                         
+BILL                                                                                                                                                  
+BOOK                                                                                                                                                  
+BOOK_AUTHORS                                                                                                                                          
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+BOOK_COPIES                                                                                                                                           
+BOOK_LOANS                                                                                                                                            
+BORROWER                                                                                                                                              
+BORROWER1                                                                                                                                             
+BUYER                                                                                                                                                 
+CROP                                                                                                                                                  
+DEPARTMENT                                                                                                                                            
+DOCTOR                                                                                                                                                
+EMERGENCY_CONTACT                                                                                                                                     
+EMPLOYEE                                                                                                                                              
+FARMER                                                                                                                                                
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+FARMER_CROP                                                                                                                                           
+FPO                                                                                                                                                   
+HELP                                                                                                                                                  
+LIBRARY_BRANCH                                                                                                                                        
+LOAN                                                                                                                                                  
+LOGMNRC_CONCOL_GG                                                                                                                                     
+LOGMNRC_CON_GG                                                                                                                                        
+LOGMNRC_DBNAME_UID_MAP                                                                                                                                
+LOGMNRC_GSBA                                                                                                                                          
+LOGMNRC_GSII                                                                                                                                          
+LOGMNRC_GTCS                                                                                                                                          
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+LOGMNRC_GTLO                                                                                                                                          
+LOGMNRC_INDCOL_GG                                                                                                                                     
+LOGMNRC_IND_GG                                                                                                                                        
+LOGMNRC_SEQ_GG                                                                                                                                        
+LOGMNRC_SHARD_TS                                                                                                                                      
+LOGMNRC_TS                                                                                                                                            
+LOGMNRC_TSPART                                                                                                                                        
+LOGMNRC_USER                                                                                                                                          
+LOGMNRGGC_GTCS                                                                                                                                        
+LOGMNRGGC_GTLO                                                                                                                                        
+LOGMNRP_CTAS_PART_MAP                                                                                                                                 
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+LOGMNRT_MDDL$                                                                                                                                         
+LOGMNR_AGE_SPILL$                                                                                                                                     
+LOGMNR_ATTRCOL$                                                                                                                                       
+LOGMNR_ATTRIBUTE$                                                                                                                                     
+LOGMNR_CCOL$                                                                                                                                          
+LOGMNR_CDEF$                                                                                                                                          
+LOGMNR_COL$                                                                                                                                           
+LOGMNR_COLTYPE$                                                                                                                                       
+LOGMNR_CON$                                                                                                                                           
+LOGMNR_CONTAINER$                                                                                                                                     
+LOGMNR_DICTIONARY$                                                                                                                                    
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+LOGMNR_DICTSTATE$                                                                                                                                     
+LOGMNR_DID$                                                                                                                                           
+LOGMNR_ENC$                                                                                                                                           
+LOGMNR_ERROR$                                                                                                                                         
+LOGMNR_FILTER$                                                                                                                                        
+LOGMNR_GLOBAL$                                                                                                                                        
+LOGMNR_GT_TAB_INCLUDE$                                                                                                                                
+LOGMNR_GT_USER_INCLUDE$                                                                                                                               
+LOGMNR_GT_XID_INCLUDE$                                                                                                                                
+LOGMNR_ICOL$                                                                                                                                          
+LOGMNR_IDNSEQ$                                                                                                                                        
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+LOGMNR_IND$                                                                                                                                           
+LOGMNR_INDCOMPART$                                                                                                                                    
+LOGMNR_INDPART$                                                                                                                                       
+LOGMNR_INDSUBPART$                                                                                                                                    
+LOGMNR_KOPM$                                                                                                                                          
+LOGMNR_LOB$                                                                                                                                           
+LOGMNR_LOBFRAG$                                                                                                                                       
+LOGMNR_LOG$                                                                                                                                           
+LOGMNR_LOGMNR_BUILDLOG                                                                                                                                
+LOGMNR_NTAB$                                                                                                                                          
+LOGMNR_OBJ$                                                                                                                                           
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+LOGMNR_OPQTYPE$                                                                                                                                       
+LOGMNR_PARAMETER$                                                                                                                                     
+LOGMNR_PARTOBJ$                                                                                                                                       
+LOGMNR_PDB_INFO$                                                                                                                                      
+LOGMNR_PROCESSED_LOG$                                                                                                                                 
+LOGMNR_PROFILE_PLSQL_STATS$                                                                                                                           
+LOGMNR_PROFILE_TABLE_STATS$                                                                                                                           
+LOGMNR_PROPS$                                                                                                                                         
+LOGMNR_REFCON$                                                                                                                                        
+LOGMNR_RESTART_CKPT$                                                                                                                                  
+LOGMNR_RESTART_CKPT_TXINFO$                                                                                                                           
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+LOGMNR_SEED$                                                                                                                                          
+LOGMNR_SESSION$                                                                                                                                       
+LOGMNR_SESSION_ACTIONS$                                                                                                                               
+LOGMNR_SESSION_EVOLVE$                                                                                                                                
+LOGMNR_SHARD_TS                                                                                                                                       
+LOGMNR_SPILL$                                                                                                                                         
+LOGMNR_SUBCOLTYPE$                                                                                                                                    
+LOGMNR_TAB$                                                                                                                                           
+LOGMNR_TABCOMPART$                                                                                                                                    
+LOGMNR_TABPART$                                                                                                                                       
+LOGMNR_TABSUBPART$                                                                                                                                    
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+LOGMNR_TS$                                                                                                                                            
+LOGMNR_TYPE$                                                                                                                                          
+LOGMNR_UID$                                                                                                                                           
+LOGMNR_USER$                                                                                                                                          
+LOGSTDBY$APPLY_MILESTONE                                                                                                                              
+LOGSTDBY$APPLY_PROGRESS                                                                                                                               
+LOGSTDBY$EDS_TABLES                                                                                                                                   
+LOGSTDBY$EVENTS                                                                                                                                       
+LOGSTDBY$FLASHBACK_SCN                                                                                                                                
+LOGSTDBY$HISTORY                                                                                                                                      
+LOGSTDBY$PARAMETERS                                                                                                                                   
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+LOGSTDBY$PLSQL                                                                                                                                        
+LOGSTDBY$SCN                                                                                                                                          
+LOGSTDBY$SKIP                                                                                                                                         
+LOGSTDBY$SKIP_SUPPORT                                                                                                                                 
+LOGSTDBY$SKIP_TRANSACTION                                                                                                                             
+MEDICINE                                                                                                                                              
+MVIEW$_ADV_AJG                                                                                                                                        
+MVIEW$_ADV_BASETABLE                                                                                                                                  
+MVIEW$_ADV_CLIQUE                                                                                                                                     
+MVIEW$_ADV_ELIGIBLE                                                                                                                                   
+MVIEW$_ADV_EXCEPTIONS                                                                                                                                 
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+MVIEW$_ADV_FILTER                                                                                                                                     
+MVIEW$_ADV_FILTERINSTANCE                                                                                                                             
+MVIEW$_ADV_FJG                                                                                                                                        
+MVIEW$_ADV_GC                                                                                                                                         
+MVIEW$_ADV_INFO                                                                                                                                       
+MVIEW$_ADV_JOURNAL                                                                                                                                    
+MVIEW$_ADV_LEVEL                                                                                                                                      
+MVIEW$_ADV_LOG                                                                                                                                        
+MVIEW$_ADV_OUTPUT                                                                                                                                     
+MVIEW$_ADV_PARAMETERS                                                                                                                                 
+MVIEW$_ADV_PLAN                                                                                                                                       
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+MVIEW$_ADV_PRETTY                                                                                                                                     
+MVIEW$_ADV_ROLLUP                                                                                                                                     
+MVIEW$_ADV_SQLDEPEND                                                                                                                                  
+MVIEW$_ADV_TEMP                                                                                                                                       
+MVIEW$_ADV_WORKLOAD                                                                                                                                   
+OL$                                                                                                                                                   
+OL$HINTS                                                                                                                                              
+OL$NODES                                                                                                                                              
+PATIENT                                                                                                                                               
+PATIENT_PHONE                                                                                                                                         
+PRESCRIBES                                                                                                                                            
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+PRODUCT                                                                                                                                               
+PUBLISHER                                                                                                                                             
+REDO_DB                                                                                                                                               
+REDO_LOG                                                                                                                                              
+REPL_SUPPORT_MATRIX                                                                                                                                   
+REPL_VALID_COMPAT                                                                                                                                     
+ROLLING$CONNECTIONS                                                                                                                                   
+ROLLING$DATABASES                                                                                                                                     
+ROLLING$DIRECTIVES                                                                                                                                    
+ROLLING$EVENTS                                                                                                                                        
+ROLLING$PARAMETERS                                                                                                                                    
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+ROLLING$PLAN                                                                                                                                          
+ROLLING$STATISTICS                                                                                                                                    
+ROLLING$STATUS                                                                                                                                        
+ROOM                                                                                                                                                  
+SALES                                                                                                                                                 
+SCHEDULER_JOB_ARGS_TBL                                                                                                                                
+SCHEDULER_PROGRAM_ARGS_TBL                                                                                                                            
+SQLPLUS_PRODUCT_PROFILE                                                                                                                               
+
+162 rows selected.
+
+SQL> DESC patient
+ Name                                                                                Null?    Type
+ ----------------------------------------------------------------------------------- -------- --------------------------------------------------------
+ PATIENT_ID                                                                          NOT NULL NUMBER(5)
+ NAME                                                                                NOT NULL VARCHAR2(60)
+ DOB                                                                                 NOT NULL DATE
+ GENDER                                                                              NOT NULL VARCHAR2(10)
+ BLOOD_GROUP                                                                                  VARCHAR2(3)
+ MEDICAL_HISTORY                                                                              VARCHAR2(200)
+ STREET                                                                                       VARCHAR2(80)
+ CITY                                                                                NOT NULL VARCHAR2(40)
+ PINCODE                                                                                      VARCHAR2(6)
+
+SQL> SELECT table_name FROM user_tables WHERE table_name IN ('ADMISSION','APPOINTMENT','BILL','DEPARTMENT','DOCTOR','EMERGENCY_CONTACT','MEDICINE','PATIENT','PATIENT_PHONE','PRESCRIBES','ROOM') ORDER BY table_name;
+
+TABLE_NAME                                                                                                                                            
+--------------------------------------------------------------------------------------------------------------------------------                      
+ADMISSION                                                                                                                                             
+APPOINTMENT                                                                                                                                           
+BILL                                                                                                                                                  
+DEPARTMENT                                                                                                                                            
+DOCTOR                                                                                                                                                
+EMERGENCY_CONTACT                                                                                                                                     
+MEDICINE                                                                                                                                              
+PATIENT                                                                                                                                               
+PATIENT_PHONE                                                                                                                                         
+PRESCRIBES                                                                                                                                            
+ROOM                                                                                                                                                  
+
+11 rows selected.
+
+SQL> SELECT sequence_name FROM user_sequences;
+
+SEQUENCE_NAME                                                                                                                                         
+--------------------------------------------------------------------------------------------------------------------------------                      
+LOGMNR_DIDS$                                                                                                                                          
+LOGMNR_EVOLVE_SEQ$                                                                                                                                    
+LOGMNR_SEQ$                                                                                                                                           
+LOGMNR_UIDS$                                                                                                                                          
+MVIEW$_ADVSEQ_GENERIC                                                                                                                                 
+MVIEW$_ADVSEQ_ID                                                                                                                                      
+ROLLING_EVENT_SEQ$                                                                                                                                    
+SEQ_ADMISSION                                                                                                                                         
+SEQ_APPOINTMENT                                                                                                                                       
+SEQ_BILL                                                                                                                                              
+SEQ_DEPARTMENT                                                                                                                                        
+
+SEQUENCE_NAME                                                                                                                                         
+--------------------------------------------------------------------------------------------------------------------------------                      
+SEQ_DOCTOR                                                                                                                                            
+SEQ_MEDICINE                                                                                                                                          
+SEQ_PATIENT                                                                                                                                           
+
+14 rows selected.
+
+SQL> SELECT view_name FROM user_views;
+
+VIEW_NAME                                                                                                                                             
+--------------------------------------------------------------------------------------------------------------------------------                      
+MVIEW_WORKLOAD                                                                                                                                        
+MVIEW_FILTER                                                                                                                                          
+MVIEW_LOG                                                                                                                                             
+MVIEW_FILTERINSTANCE                                                                                                                                  
+MVIEW_RECOMMENDATIONS                                                                                                                                 
+MVIEW_EVALUATIONS                                                                                                                                     
+MVIEW_EXCEPTIONS                                                                                                                                      
+SCHEDULER_PROGRAM_ARGS                                                                                                                                
+SCHEDULER_JOB_ARGS                                                                                                                                    
+PRODUCT_PRIVS                                                                                                                                         
+LOAN_DETAILS_VIEW                                                                                                                                     
+
+VIEW_NAME                                                                                                                                             
+--------------------------------------------------------------------------------------------------------------------------------                      
+V_PATIENT_AGE                                                                                                                                         
+V_ADMISSION_STAY                                                                                                                                      
+V_BILL_TOTAL                                                                                                                                          
+
+14 rows selected.
+
+SQL> SPOOL OFF

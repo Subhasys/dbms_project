@@ -1,0 +1,12 @@
+{
+  "name": "hospital-management-system",
+  "version": "1.0.0",
+  "description": "Hospital Management System - Flask and Oracle Database 21c XE",
+  "private": true,
+  "scripts": {
+    "start": ".env\\Scripts\\python.exe run.py",
+    "dev": ".env\\Scripts\\python.exe run.py",
+    "test": ".env\\Scripts\\python.exe test_app.py"
+  }
+}
+

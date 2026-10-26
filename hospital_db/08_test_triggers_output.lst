@@ -1,0 +1,228 @@
+SQL> @E:\hospital_db\08_test_triggers.sql
+SQL> -- =====================================================================
+SQL> --  08_test_triggers.sql : tests all 5 triggers
+SQL> --  Everything done here is UNDONE by the ROLLBACK at the end,
+SQL> --  so your data is left exactly as it was.
+SQL> -- =====================================================================
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> SET SERVEROUTPUT ON
+SQL> SET LINESIZE 150
+SQL> 
+SQL> PROMPT
+
+SQL> PROMPT ===== Triggers that exist =====
+===== Triggers that exist =====
+SQL> SELECT trigger_name, triggering_event, table_name, status
+  2  FROM   user_triggers
+  3  ORDER  BY trigger_name;
+
+TRIGGER_NAME                                                                                                                                          
+--------------------------------------------------------------------------------------------------------------------------------                      
+TRIGGERING_EVENT                                                                                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+TABLE_NAME         STATUS                                                                                                                             
+------------------ --------                                                                                                                           
+TRG_ADMISSION_CHECK_ROOM                                                                                                                              
+INSERT                                                                                                                                                
+ADMISSION          ENABLED                                                                                                                            
+                                                                                                                                                      
+TRG_ADMISSION_FREE_ROOM                                                                                                                               
+UPDATE                                                                                                                                                
+ADMISSION          ENABLED                                                                                                                            
+                                                                                                                                                      
+TRG_ADMISSION_OCCUPY_ROOM                                                                                                                             
+INSERT                                                                                                                                                
+ADMISSION          ENABLED                                                                                                                            
+                                                                                                                                                      
+TRG_BILL_PAYMENT_CHECK                                                                                                                                
+INSERT OR UPDATE                                                                                                                                      
+BILL               ENABLED                                                                                                                            
+                                                                                                                                                      
+TRG_PRESCRIBE_UPDATE_STOCK                                                                                                                            
+INSERT                                                                                                                                                
+PRESCRIBES         ENABLED                                                                                                                            
+                                                                                                                                                      
+
+5 rows selected.
+
+SQL> 
+SQL> PROMPT
+
+SQL> PROMPT ===== Room status BEFORE the tests =====
+===== Room status BEFORE the tests =====
+SQL> SELECT status, COUNT(*) AS no_of_rooms FROM room GROUP BY status ORDER BY status;
+
+STATUS       NO_OF_ROOMS                                                                                                                              
+------------ -----------                                                                                                                              
+Available              8                                                                                                                              
+Maintenance            1                                                                                                                              
+Occupied               3                                                                                                                              
+
+3 rows selected.
+
+SQL> 
+SQL> PROMPT
+
+SQL> PROMPT ===== Tests 1 to 4: admission and room triggers =====
+===== Tests 1 to 4: admission and room triggers =====
+SQL> DECLARE
+  2  	 v_room     room.room_no%TYPE;
+  3  	 v_patient  patient.patient_id%TYPE;
+  4  	 v_status   room.status%TYPE;
+  5  BEGIN
+  6  	 SELECT MIN(room_no) INTO v_room FROM room WHERE status = 'Available';
+  7  	 SELECT MIN(patient_id) INTO v_patient FROM patient
+  8  	 WHERE	patient_id NOT IN (SELECT patient_id FROM admission WHERE discharge_date IS NULL);
+  9  	 DBMS_OUTPUT.PUT_LINE('Using room ' || v_room || ' and patient ' || v_patient);
+ 10  
+ 11  	 SELECT status INTO v_status FROM room WHERE room_no = v_room;
+ 12  	 DBMS_OUTPUT.PUT_LINE('1. Room status before admission	: ' || v_status);
+ 13  
+ 14  	 INSERT INTO admission (admission_id, admit_date, discharge_date, reason, patient_id, room_no)
+ 15  	 VALUES (seq_admission.NEXTVAL, SYSDATE, NULL, 'Trigger test admission', v_patient, v_room);
+ 16  
+ 17  	 SELECT status INTO v_status FROM room WHERE room_no = v_room;
+ 18  	 DBMS_OUTPUT.PUT_LINE('2. Room status after admission	: ' || v_status || '  (trigger 2 set it)');
+ 19  
+ 20  	 BEGIN
+ 21  	     INSERT INTO admission (admission_id, admit_date, discharge_date, reason, patient_id, room_no)
+ 22  	     VALUES (seq_admission.NEXTVAL, SYSDATE, NULL, 'Should be blocked', v_patient, v_room);
+ 23  	     DBMS_OUTPUT.PUT_LINE('ERROR: second admission to the same room was allowed');
+ 24  	 EXCEPTION
+ 25  	     WHEN OTHERS THEN
+ 26  		 DBMS_OUTPUT.PUT_LINE('3. Second admission, same room	 : ' || SQLERRM);
+ 27  	 END;
+ 28  
+ 29  	 UPDATE admission SET discharge_date = SYSDATE
+ 30  	 WHERE	reason = 'Trigger test admission' AND patient_id = v_patient AND discharge_date IS NULL;
+ 31  
+ 32  	 SELECT status INTO v_status FROM room WHERE room_no = v_room;
+ 33  	 DBMS_OUTPUT.PUT_LINE('4. Room status after discharge	: ' || v_status || '  (trigger 3 set it)');
+ 34  END;
+ 35  /
+Using room 101 and patient 1001                                                                                                                       
+1. Room status before admission  : Available                                                                                                          
+2. Room status after admission   : Occupied  (trigger 2 set it)                                                                                       
+3. Second admission, same room    : ORA-20101: Room 101 is not available (status: Occupied)
+ORA-06512: at "SYSTEM.TRG_ADMISSION_CHECK_ROOM", line     
+7
+ORA-04088: error during execution of trigger 'SYSTEM.TRG_ADMISSION_CHECK_ROOM'                                                                      
+4. Room status after discharge   : Available  (trigger 3 set it)                                                                                      
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> PROMPT
+
+SQL> PROMPT ===== Tests 5 to 7: prescription trigger =====
+===== Tests 5 to 7: prescription trigger =====
+SQL> DECLARE
+  2  	 v_appt    appointment.appointment_id%TYPE;
+  3  	 v_before  medicine.stock_qty%TYPE;
+  4  	 v_after   medicine.stock_qty%TYPE;
+  5  BEGIN
+  6  	 SELECT MIN(a.appointment_id) INTO v_appt
+  7  	 FROM	appointment a
+  8  	 WHERE	NOT EXISTS (SELECT 1 FROM prescribes p
+  9  			    WHERE  p.appointment_id = a.appointment_id AND p.medicine_id = 201);
+ 10  
+ 11  	 SELECT stock_qty INTO v_before FROM medicine WHERE medicine_id = 201;
+ 12  	 INSERT INTO prescribes VALUES (v_appt, 201, '500mg twice daily', 3, 6);
+ 13  	 SELECT stock_qty INTO v_after FROM medicine WHERE medicine_id = 201;
+ 14  	 DBMS_OUTPUT.PUT_LINE('5. Paracetamol stock: before ' || v_before || ', after prescribing 6 = ' || v_after);
+ 15  
+ 16  	 BEGIN
+ 17  	     INSERT INTO prescribes VALUES (v_appt, 212, '500mg once daily', 3, 3);
+ 18  	     DBMS_OUTPUT.PUT_LINE('ERROR: expired medicine was allowed');
+ 19  	 EXCEPTION
+ 20  	     WHEN OTHERS THEN
+ 21  		 DBMS_OUTPUT.PUT_LINE('6. Expired medicine		 : ' || SQLERRM);
+ 22  	 END;
+ 23  
+ 24  	 BEGIN
+ 25  	     INSERT INTO prescribes VALUES (v_appt, 209, '400mg twice daily', 10, 1000);
+ 26  	     DBMS_OUTPUT.PUT_LINE('ERROR: quantity above stock was allowed');
+ 27  	 EXCEPTION
+ 28  	     WHEN OTHERS THEN
+ 29  		 DBMS_OUTPUT.PUT_LINE('7. Quantity above stock		 : ' || SQLERRM);
+ 30  	 END;
+ 31  END;
+ 32  /
+5. Paracetamol stock: before 500, after prescribing 6 = 494                                                                                           
+6. Expired medicine               : ORA-20102: Azithromycin 500mg has expired and cannot be prescribed
+ORA-06512: at                                  
+"SYSTEM.TRG_PRESCRIBE_UPDATE_STOCK", line 13
+ORA-04088: error during execution of trigger 'SYSTEM.TRG_PRESCRIBE_UPDATE_STOCK'                         
+7. Quantity above stock           : ORA-20103: Only 45 units of Ibuprofen 400mg are in stock
+ORA-06512: at "SYSTEM.TRG_PRESCRIBE_UPDATE_STOCK", line  
+15
+ORA-04088: error during execution of trigger 'SYSTEM.TRG_PRESCRIBE_UPDATE_STOCK'                                                                   
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> PROMPT
+
+SQL> PROMPT ===== Tests 8 and 9: bill trigger =====
+===== Tests 8 and 9: bill trigger =====
+SQL> BEGIN
+  2  	 BEGIN
+  3  	     INSERT INTO bill (bill_id, bill_date, consultation_charge, medicine_charge, room_charge,
+  4  			       payment_mode, payment_status, patient_id)
+  5  	     VALUES (seq_bill.NEXTVAL, SYSDATE, 100, 0, 0, NULL, 'Paid', 1001);
+  6  	     DBMS_OUTPUT.PUT_LINE('ERROR: paid bill without a mode was allowed');
+  7  	 EXCEPTION
+  8  	     WHEN OTHERS THEN
+  9  		 DBMS_OUTPUT.PUT_LINE('8. Paid bill, no payment mode	 : ' || SQLERRM);
+ 10  	 END;
+ 11  
+ 12  	 INSERT INTO bill (bill_id, bill_date, consultation_charge, medicine_charge, room_charge,
+ 13  			   payment_mode, payment_status, patient_id)
+ 14  	 VALUES (seq_bill.NEXTVAL, SYSDATE, 100, 0, 0, 'Cash', 'Paid', 1001);
+ 15  	 DBMS_OUTPUT.PUT_LINE('9. Paid bill with mode Cash	 : accepted');
+ 16  END;
+ 17  /
+8. Paid bill, no payment mode     : ORA-20104: A paid bill must have a payment mode
+ORA-06512: at "SYSTEM.TRG_BILL_PAYMENT_CHECK", line 3
+ORA-04088:  
+error during execution of trigger 'SYSTEM.TRG_BILL_PAYMENT_CHECK'                                                                                     
+9. Paid bill with mode Cash       : accepted                                                                                                          
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> PROMPT
+
+SQL> PROMPT ===== Undo everything done by this test =====
+===== Undo everything done by this test =====
+SQL> ROLLBACK;
+
+Rollback complete.
+
+SQL> 
+SQL> PROMPT
+
+SQL> PROMPT ===== Room status AFTER the rollback (same as before the tests) =====
+===== Room status AFTER the rollback (same as before the tests) =====
+SQL> SELECT status, COUNT(*) AS no_of_rooms FROM room GROUP BY status ORDER BY status;
+
+STATUS       NO_OF_ROOMS                                                                                                                              
+------------ -----------                                                                                                                              
+Available              8                                                                                                                              
+Maintenance            1                                                                                                                              
+Occupied               3                                                                                                                              
+
+3 rows selected.
+
+SQL> SELECT medicine_id, medicine_name, stock_qty FROM medicine WHERE medicine_id = 201;
+
+MEDICINE_ID MEDICINE_NAME           STOCK_QTY                                                                                                         
+----------- ---------------------- ----------                                                                                                         
+        201 Paracetamol 500mg             500                                                                                                         
+
+1 row selected.
+
+SQL> SPOOL OFF

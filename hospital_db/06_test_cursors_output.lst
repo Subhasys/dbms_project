@@ -1,0 +1,182 @@
+SQL> 
+SQL> VARIABLE v_cnt NUMBER
+SQL> 
+SQL> -- =====================================================================
+SQL> -- CURSOR 1 : sp_pharmacy_alert_report
+SQL> -- =====================================================================
+SQL> PROMPT
+
+SQL> PROMPT ===== 1.1 Default report : expiry within 3 months, stock below 50 =====
+===== 1.1 Default report : expiry within 3 months, stock below 50 =====
+SQL> PROMPT Expected (run on 25-Oct-2026): Azithromycin EXPIRED, ORS Sachet and
+Expected (run on 25-Oct-2026): Azithromycin EXPIRED, ORS Sachet and
+SQL> PROMPT Salbutamol EXPIRING SOON, Ibuprofen LOW STOCK. The list depends on today's date.
+Salbutamol EXPIRING SOON, Ibuprofen LOW STOCK. The list depends on today's date.
+SQL> EXEC sp_pharmacy_alert_report;
+PHARMACY ALERT REPORT  (expiry within 3 months, stock below 50)                                                                                                                                         
+ID    MEDICINE                ALERT           EXPIRY DATE    STOCK                                                                                                                                      
+------------------------------------------------------------------                                                                                                                                      
+212   Azithromycin 500mg      EXPIRED         31-Aug-2026      200                                                                                                                                      
+211   ORS Sachet              EXPIRING SOON   20-Nov-2026      150                                                                                                                                      
+207   Salbutamol Inhaler      EXPIRING SOON   15-Dec-2026       60                                                                                                                                      
+209   Ibuprofen 400mg         LOW STOCK       28-Feb-2027       45                                                                                                                                      
+------------------------------------------------------------------                                                                                                                                      
+Medicines listed: 4  (expired 1, expiring soon 2, low stock 1)                                                                                                                                          
+Value of expired stock to be written off: 4400                                                                                                                                                          
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> PROMPT ===== 1.2 Wider report : expiry within 6 months, stock below 100 =====
+===== 1.2 Wider report : expiry within 6 months, stock below 100 =====
+SQL> EXEC sp_pharmacy_alert_report(6, 100);
+PHARMACY ALERT REPORT  (expiry within 6 months, stock below 100)                                                                                                                                        
+ID    MEDICINE                ALERT           EXPIRY DATE    STOCK                                                                                                                                      
+------------------------------------------------------------------                                                                                                                                      
+212   Azithromycin 500mg      EXPIRED         31-Aug-2026      200                                                                                                                                      
+211   ORS Sachet              EXPIRING SOON   20-Nov-2026      150                                                                                                                                      
+207   Salbutamol Inhaler      EXPIRING SOON   15-Dec-2026       60                                                                                                                                      
+209   Ibuprofen 400mg         EXPIRING SOON   28-Feb-2027       45                                                                                                                                      
+------------------------------------------------------------------                                                                                                                                      
+Medicines listed: 4  (expired 1, expiring soon 3, low stock 0)                                                                                                                                          
+Value of expired stock to be written off: 4400                                                                                                                                                          
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> PROMPT ===== 1.3 Very strict report : nothing expires within 0 months, stock below 10 =====
+===== 1.3 Very strict report : nothing expires within 0 months, stock below 10 =====
+SQL> EXEC sp_pharmacy_alert_report(0, 10);
+PHARMACY ALERT REPORT  (expiry within 0 months, stock below 10)                                                                                                                                         
+ID    MEDICINE                ALERT           EXPIRY DATE    STOCK                                                                                                                                      
+------------------------------------------------------------------                                                                                                                                      
+212   Azithromycin 500mg      EXPIRED         31-Aug-2026      200                                                                                                                                      
+------------------------------------------------------------------                                                                                                                                      
+Medicines listed: 1  (expired 1, expiring soon 0, low stock 0)                                                                                                                                          
+Value of expired stock to be written off: 4400                                                                                                                                                          
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> -- =====================================================================
+SQL> -- CURSOR 2 : sp_revise_doctor_fees
+SQL> -- =====================================================================
+SQL> PROMPT
+
+SQL> PROMPT ===== 2.1 Pediatrics fees BEFORE (500 and 500) =====
+===== 2.1 Pediatrics fees BEFORE (500 and 500) =====
+SQL> SELECT doctor_id, name, consultation_fee FROM doctor WHERE dept_id = 4 ORDER BY doctor_id;
+
+ DOCTOR_ID NAME                   CONSULTATION_FEE                                                                                                                                                      
+---------- ---------------------- ----------------                                                                                                                                                      
+       105 Dr. Rohit Sharma                    500                                                                                                                                                      
+       106 Dr. Anjali Nair                     500                                                                                                                                                      
+
+2 rows selected.
+
+SQL> 
+SQL> PROMPT ===== 2.2 Raise Pediatrics fees by 10 percent =====
+===== 2.2 Raise Pediatrics fees by 10 percent =====
+SQL> EXEC sp_revise_doctor_fees(4, 10, :v_cnt);
+Dr. Rohit Sharma       fee 500 -> 550                                                                                                                                                                   
+Dr. Anjali Nair        fee 500 -> 550                                                                                                                                                                   
+2 doctor(s) updated by 10 percent                                                                                                                                                                       
+
+PL/SQL procedure successfully completed.
+
+SQL> PRINT v_cnt
+
+     V_CNT                                                                                                                                                                                              
+----------                                                                                                                                                                                              
+         2                                                                                                                                                                                              
+
+SQL> 
+SQL> PROMPT ===== 2.3 Pediatrics fees AFTER (550 and 550) =====
+===== 2.3 Pediatrics fees AFTER (550 and 550) =====
+SQL> SELECT doctor_id, name, consultation_fee FROM doctor WHERE dept_id = 4 ORDER BY doctor_id;
+
+ DOCTOR_ID NAME                   CONSULTATION_FEE                                                                                                                                                      
+---------- ---------------------- ----------------                                                                                                                                                      
+       105 Dr. Rohit Sharma                    550                                                                                                                                                      
+       106 Dr. Anjali Nair                     550                                                                                                                                                      
+
+2 rows selected.
+
+SQL> 
+SQL> PROMPT ===== 2.4 Lower Cardiology fees by 20 percent (800 -> 640, 750 -> 600) =====
+===== 2.4 Lower Cardiology fees by 20 percent (800 -> 640, 750 -> 600) =====
+SQL> EXEC sp_revise_doctor_fees(1, -20, :v_cnt);
+Dr. Arvind Menon       fee 800 -> 640                                                                                                                                                                   
+Dr. Kavya Rangan       fee 750 -> 600                                                                                                                                                                   
+2 doctor(s) updated by -20 percent                                                                                                                                                                      
+
+PL/SQL procedure successfully completed.
+
+SQL> PRINT v_cnt
+
+     V_CNT                                                                                                                                                                                              
+----------                                                                                                                                                                                              
+         2                                                                                                                                                                                              
+
+SQL> 
+SQL> PROMPT ===== 2.5 Department with no doctors (Emergency, 10) : message and count 0 =====
+===== 2.5 Department with no doctors (Emergency, 10) : message and count 0 =====
+SQL> EXEC sp_revise_doctor_fees(10, 10, :v_cnt);
+Department 10 has no doctors. Nothing changed.                                                                                                                                                          
+
+PL/SQL procedure successfully completed.
+
+SQL> PRINT v_cnt
+
+     V_CNT                                                                                                                                                                                              
+----------                                                                                                                                                                                              
+         0                                                                                                                                                                                              
+
+SQL> 
+SQL> PROMPT ===== 2.6 Unknown department : ORA-20061 expected =====
+===== 2.6 Unknown department : ORA-20061 expected =====
+SQL> EXEC sp_revise_doctor_fees(99, 10, :v_cnt);
+BEGIN sp_revise_doctor_fees(99, 10, :v_cnt); END;
+
+*
+ERROR at line 1:
+ORA-20061: Department 99 not found 
+ORA-06512: at "SYSTEM.SP_REVISE_DOCTOR_FEES", line 20 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== 2.7 Percentage too large : ORA-20062 expected =====
+===== 2.7 Percentage too large : ORA-20062 expected =====
+SQL> EXEC sp_revise_doctor_fees(4, 500, :v_cnt);
+BEGIN sp_revise_doctor_fees(4, 500, :v_cnt); END;
+
+*
+ERROR at line 1:
+ORA-20062: Percentage must be between -50 and 100 
+ORA-06512: at "SYSTEM.SP_REVISE_DOCTOR_FEES", line 24 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== 2.8 ROLLBACK : all fee changes are undone =====
+===== 2.8 ROLLBACK : all fee changes are undone =====
+SQL> ROLLBACK;
+
+Rollback complete.
+
+SQL> SELECT doctor_id, name, consultation_fee FROM doctor WHERE dept_id IN (1, 4) ORDER BY doctor_id;
+
+ DOCTOR_ID NAME                   CONSULTATION_FEE                                                                                                                                                      
+---------- ---------------------- ----------------                                                                                                                                                      
+       101 Dr. Arvind Menon                    800                                                                                                                                                      
+       102 Dr. Kavya Rangan                    750                                                                                                                                                      
+       105 Dr. Rohit Sharma                    500                                                                                                                                                      
+       106 Dr. Anjali Nair                     500                                                                                                                                                      
+
+4 rows selected.
+
+SQL> PROMPT Expected: 101=800, 102=750, 105=500, 106=500
+Expected: 101=800, 102=750, 105=500, 106=500
+SQL> 
+SQL> SPOOL OFF

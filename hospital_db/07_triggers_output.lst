@@ -1,0 +1,146 @@
+SQL> @E:\hospital_db\07_triggers.sql
+SQL> -- =====================================================================
+SQL> --  07_triggers.sql : 5 triggers (automatic actions)
+SQL> --  Run once, after 01_schema.sql and 02_data.sql.
+SQL> --  Expected: "Trigger created." five times.
+SQL> -- =====================================================================
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Trigger 1: stop an admission into a room that is not Available
+SQL> -- ---------------------------------------------------------------------
+SQL> CREATE OR REPLACE TRIGGER trg_admission_check_room
+  2  BEFORE INSERT ON admission
+  3  FOR EACH ROW
+  4  DECLARE
+  5  	 v_status room.status%TYPE;
+  6  BEGIN
+  7  	 IF :NEW.discharge_date IS NULL THEN
+  8  	     SELECT status INTO v_status FROM room WHERE room_no = :NEW.room_no;
+  9  	     IF v_status <> 'Available' THEN
+ 10  		 RAISE_APPLICATION_ERROR(-20101,
+ 11  		     'Room ' || :NEW.room_no || ' is not available (status: ' || v_status || ')');
+ 12  	     END IF;
+ 13  	 END IF;
+ 14  EXCEPTION
+ 15  	 WHEN NO_DATA_FOUND THEN
+ 16  	     NULL;   -- a missing room is reported by the foreign key instead
+ 17  END;
+ 18  /
+
+Trigger created.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Trigger 2: when a patient is admitted, mark the room as Occupied
+SQL> -- ---------------------------------------------------------------------
+SQL> CREATE OR REPLACE TRIGGER trg_admission_occupy_room
+  2  AFTER INSERT ON admission
+  3  FOR EACH ROW
+  4  WHEN (NEW.discharge_date IS NULL)
+  5  BEGIN
+  6  	 UPDATE room SET status = 'Occupied' WHERE room_no = :NEW.room_no;
+  7  END;
+  8  /
+
+Trigger created.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Trigger 3: when a patient is discharged, mark the room as Available
+SQL> -- ---------------------------------------------------------------------
+SQL> CREATE OR REPLACE TRIGGER trg_admission_free_room
+  2  AFTER UPDATE OF discharge_date ON admission
+  3  FOR EACH ROW
+  4  WHEN (OLD.discharge_date IS NULL AND NEW.discharge_date IS NOT NULL)
+  5  BEGIN
+  6  	 UPDATE room SET status = 'Available' WHERE room_no = :NEW.room_no;
+  7  END;
+  8  /
+
+Trigger created.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Trigger 4: when a medicine is prescribed, reduce its stock.
+SQL> -- 	   Block expired medicines and quantities above the stock.
+SQL> -- ---------------------------------------------------------------------
+SQL> CREATE OR REPLACE TRIGGER trg_prescribe_update_stock
+  2  BEFORE INSERT ON prescribes
+  3  FOR EACH ROW
+  4  DECLARE
+  5  	 v_stock   medicine.stock_qty%TYPE;
+  6  	 v_expiry  medicine.expiry_date%TYPE;
+  7  	 v_name    medicine.medicine_name%TYPE;
+  8  BEGIN
+  9  	 SELECT stock_qty, expiry_date, medicine_name
+ 10  	 INTO	v_stock, v_expiry, v_name
+ 11  	 FROM	medicine
+ 12  	 WHERE	medicine_id = :NEW.medicine_id
+ 13  	 FOR UPDATE;
+ 14  
+ 15  	 IF v_expiry < TRUNC(SYSDATE) THEN
+ 16  	     RAISE_APPLICATION_ERROR(-20102, v_name || ' has expired and cannot be prescribed');
+ 17  	 ELSIF v_stock < :NEW.quantity THEN
+ 18  	     RAISE_APPLICATION_ERROR(-20103, 'Only ' || v_stock || ' units of ' || v_name || ' are in stock');
+ 19  	 END IF;
+ 20  
+ 21  	 UPDATE medicine
+ 22  	 SET	stock_qty = stock_qty - :NEW.quantity
+ 23  	 WHERE	medicine_id = :NEW.medicine_id;
+ 24  EXCEPTION
+ 25  	 WHEN NO_DATA_FOUND THEN
+ 26  	     NULL;   -- a missing medicine is reported by the foreign key instead
+ 27  END;
+ 28  /
+
+Trigger created.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Trigger 5: a bill marked Paid must have a payment mode
+SQL> -- ---------------------------------------------------------------------
+SQL> CREATE OR REPLACE TRIGGER trg_bill_payment_check
+  2  BEFORE INSERT OR UPDATE ON bill
+  3  FOR EACH ROW
+  4  BEGIN
+  5  	 IF :NEW.payment_status = 'Paid' AND :NEW.payment_mode IS NULL THEN
+  6  	     RAISE_APPLICATION_ERROR(-20104, 'A paid bill must have a payment mode');
+  7  	 END IF;
+  8  END;
+  9  /
+
+Trigger created.
+
+SQL> SET LINESIZE 150
+SQL> SELECT trigger_name, triggering_event, table_name, status FROM user_triggers ORDER BY trigger_name;
+
+TRIGGER_NAME                                                                                                                                          
+--------------------------------------------------------------------------------------------------------------------------------                      
+TRIGGERING_EVENT                                                                                                                                      
+------------------------------------------------------------------------------------------------------------------------------------------------------
+TABLE_NAME         STATUS                                                                                                                             
+------------------ --------                                                                                                                           
+TRG_ADMISSION_CHECK_ROOM                                                                                                                              
+INSERT                                                                                                                                                
+ADMISSION          ENABLED                                                                                                                            
+                                                                                                                                                      
+TRG_ADMISSION_FREE_ROOM                                                                                                                               
+UPDATE                                                                                                                                                
+ADMISSION          ENABLED                                                                                                                            
+                                                                                                                                                      
+TRG_ADMISSION_OCCUPY_ROOM                                                                                                                             
+INSERT                                                                                                                                                
+ADMISSION          ENABLED                                                                                                                            
+                                                                                                                                                      
+TRG_BILL_PAYMENT_CHECK                                                                                                                                
+INSERT OR UPDATE                                                                                                                                      
+BILL               ENABLED                                                                                                                            
+                                                                                                                                                      
+TRG_PRESCRIBE_UPDATE_STOCK                                                                                                                            
+INSERT                                                                                                                                                
+PRESCRIBES         ENABLED                                                                                                                            
+                                                                                                                                                      
+
+5 rows selected.
+
+SQL> SPOOL OFF

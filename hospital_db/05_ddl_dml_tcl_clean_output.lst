@@ -1,0 +1,338 @@
+SQL> 
+SQL> CREATE TABLE doctor_backup AS SELECT * FROM doctor;
+
+Table created.
+
+SQL> SELECT COUNT(*) AS rows_copied FROM doctor_backup;
+
+ROWS_COPIED                                                                                                                                                                                             
+-----------                                                                                                                                                                                             
+         12                                                                                                                                                                                             
+
+1 row selected.
+
+SQL> ALTER TABLE doctor_backup ADD (experience_years NUMBER(2) DEFAULT 0 NOT NULL);
+
+Table altered.
+
+SQL> DESC doctor_backup
+ Name                                                                                                              Null?    Type
+ ----------------------------------------------------------------------------------------------------------------- -------- ----------------------------------------------------------------------------
+ DOCTOR_ID                                                                                                                  NUMBER(4)
+ NAME                                                                                                              NOT NULL VARCHAR2(60)
+ SPECIALIZATION                                                                                                    NOT NULL VARCHAR2(50)
+ PHONE                                                                                                             NOT NULL VARCHAR2(15)
+ EMAIL                                                                                                             NOT NULL VARCHAR2(80)
+ CONSULTATION_FEE                                                                                                  NOT NULL NUMBER(8,2)
+ DEPT_ID                                                                                                           NOT NULL NUMBER(3)
+ EXPERIENCE_YEARS                                                                                                  NOT NULL NUMBER(2)
+
+SQL> ALTER TABLE doctor_backup MODIFY (experience_years NUMBER(3));
+
+Table altered.
+
+SQL> ALTER TABLE doctor_backup RENAME COLUMN experience_years TO exp_years;
+
+Table altered.
+
+SQL> ALTER TABLE doctor_backup DROP COLUMN exp_years;
+
+Table altered.
+
+SQL> DESC doctor_backup
+ Name                                                                                                              Null?    Type
+ ----------------------------------------------------------------------------------------------------------------- -------- ----------------------------------------------------------------------------
+ DOCTOR_ID                                                                                                                  NUMBER(4)
+ NAME                                                                                                              NOT NULL VARCHAR2(60)
+ SPECIALIZATION                                                                                                    NOT NULL VARCHAR2(50)
+ PHONE                                                                                                             NOT NULL VARCHAR2(15)
+ EMAIL                                                                                                             NOT NULL VARCHAR2(80)
+ CONSULTATION_FEE                                                                                                  NOT NULL NUMBER(8,2)
+ DEPT_ID                                                                                                           NOT NULL NUMBER(3)
+
+SQL> RENAME doctor_backup TO doctor_copy;
+
+Table renamed.
+
+SQL> CREATE INDEX idx_appt_date ON appointment(appt_date);
+
+Index created.
+
+SQL> SELECT index_name, table_name FROM user_indexes WHERE index_name = 'IDX_APPT_DATE';
+
+INDEX_NAME                                                                                                                       TABLE_NAME                                                             
+-------------------------------------------------------------------------------------------------------------------------------- ------------------                                                     
+IDX_APPT_DATE                                                                                                                    APPOINTMENT                                                            
+
+1 row selected.
+
+SQL> TRUNCATE TABLE doctor_copy;
+
+Table truncated.
+
+SQL> SELECT COUNT(*) AS rows_after_truncate FROM doctor_copy;
+
+ROWS_AFTER_TRUNCATE                                                                                                                                                                                     
+-------------------                                                                                                                                                                                     
+                  0                                                                                                                                                                                     
+
+1 row selected.
+
+SQL> DROP INDEX idx_appt_date;
+
+Index dropped.
+
+SQL> DROP TABLE doctor_copy PURGE;
+
+Table dropped.
+
+SQL> 
+SQL> INSERT INTO patient (patient_id, name, dob, gender, blood_group,
+  2  			  medical_history, street, city, pincode)
+  3  VALUES (seq_patient.NEXTVAL, 'Demo Patient', DATE '1990-01-15', 'Male', 'B+',
+  4  	     'None', '10 Demo Street', 'Vellore', '632001');
+
+1 row created.
+
+SQL> INSERT INTO patient_phone VALUES (seq_patient.CURRVAL, '9841199999');
+
+1 row created.
+
+SQL> INSERT INTO emergency_contact VALUES (seq_patient.CURRVAL, 'Demo Relative', 'Brother', '9841188888');
+
+1 row created.
+
+SQL> INSERT INTO appointment (appointment_id, appt_date, appt_time, patient_id, doctor_id)
+  2  VALUES (seq_appointment.NEXTVAL, DATE '2026-10-30', '10:00', seq_patient.CURRVAL, 106);
+
+1 row created.
+
+SQL> INSERT INTO bill (bill_id, consultation_charge, patient_id)
+  2  VALUES (seq_bill.NEXTVAL, 500, seq_patient.CURRVAL);
+
+1 row created.
+
+SQL> SELECT patient_id, name, city FROM patient WHERE name = 'Demo Patient';
+
+PATIENT_ID NAME                   CITY                                                                                                                                                                  
+---------- ---------------------- ------------                                                                                                                                                          
+      1014 Demo Patient           Vellore                                                                                                                                                               
+
+1 row selected.
+
+SQL> SELECT appointment_id, appt_date, appt_time, status, doctor_id
+  2  FROM   appointment WHERE patient_id = (SELECT patient_id FROM patient WHERE name = 'Demo Patient');
+
+APPOINTMENT_ID APPT_DATE APPT_ STATUS      DOCTOR_ID                                                                                                                                                    
+-------------- --------- ----- ---------- ----------                                                                                                                                                    
+          3018 30-OCT-26 10:00 Scheduled         106                                                                                                                                                    
+
+1 row selected.
+
+SQL> SELECT bill_id, bill_date, consultation_charge, payment_status
+  2  FROM   bill WHERE patient_id = (SELECT patient_id FROM patient WHERE name = 'Demo Patient');
+
+   BILL_ID BILL_DATE CONSULTATION_CHARGE PAYMENT_ST                                                                                                                                                     
+---------- --------- ------------------- ----------                                                                                                                                                     
+      7014 25-OCT-26                 500 Pending                                                                                                                                                        
+
+1 row selected.
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> 
+SQL> UPDATE patient
+  2  SET    city = 'Katpadi', street = '22 New Colony'
+  3  WHERE  name = 'Demo Patient';
+
+1 row updated.
+
+SQL> UPDATE appointment
+  2  SET    status = 'Completed', diagnosis = 'Routine checkup'
+  3  WHERE  patient_id = (SELECT patient_id FROM patient WHERE name = 'Demo Patient');
+
+1 row updated.
+
+SQL> UPDATE bill
+  2  SET    payment_mode = 'UPI', payment_status = 'Paid'
+  3  WHERE  patient_id = (SELECT patient_id FROM patient WHERE name = 'Demo Patient');
+
+1 row updated.
+
+SQL> SELECT patient_id, name, city FROM patient WHERE name = 'Demo Patient';
+
+PATIENT_ID NAME                   CITY                                                                                                                                                                  
+---------- ---------------------- ------------                                                                                                                                                          
+      1014 Demo Patient           Katpadi                                                                                                                                                               
+
+1 row selected.
+
+SQL> SELECT appointment_id, status, diagnosis FROM appointment
+  2  WHERE  patient_id = (SELECT patient_id FROM patient WHERE name = 'Demo Patient');
+
+APPOINTMENT_ID STATUS     DIAGNOSIS                                                                                                                                                                     
+-------------- ---------- --------------------                                                                                                                                                          
+          3018 Completed  Routine checkup                                                                                                                                                               
+
+1 row selected.
+
+SQL> SELECT bill_id, payment_mode, payment_status FROM bill
+  2  WHERE  patient_id = (SELECT patient_id FROM patient WHERE name = 'Demo Patient');
+
+   BILL_ID PAYMENT_MO PAYMENT_ST                                                                                                                                                                        
+---------- ---------- ----------                                                                                                                                                                        
+      7014 UPI        Paid                                                                                                                                                                              
+
+1 row selected.
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> 
+SQL> SELECT doctor_id, name, consultation_fee FROM doctor WHERE dept_id = 1 ORDER BY doctor_id;
+
+ DOCTOR_ID NAME                   CONSULTATION_FEE                                                                                                                                                      
+---------- ---------------------- ----------------                                                                                                                                                      
+       101 Dr. Arvind Menon                    800                                                                                                                                                      
+       102 Dr. Kavya Rangan                    750                                                                                                                                                      
+
+2 rows selected.
+
+SQL> UPDATE doctor SET consultation_fee = consultation_fee * 1.10 WHERE dept_id = 1;
+
+2 rows updated.
+
+SQL> SELECT doctor_id, name, consultation_fee FROM doctor WHERE dept_id = 1 ORDER BY doctor_id;
+
+ DOCTOR_ID NAME                   CONSULTATION_FEE                                                                                                                                                      
+---------- ---------------------- ----------------                                                                                                                                                      
+       101 Dr. Arvind Menon                    880                                                                                                                                                      
+       102 Dr. Kavya Rangan                    825                                                                                                                                                      
+
+2 rows selected.
+
+SQL> ROLLBACK;
+
+Rollback complete.
+
+SQL> SELECT doctor_id, name, consultation_fee FROM doctor WHERE dept_id = 1 ORDER BY doctor_id;
+
+ DOCTOR_ID NAME                   CONSULTATION_FEE                                                                                                                                                      
+---------- ---------------------- ----------------                                                                                                                                                      
+       101 Dr. Arvind Menon                    800                                                                                                                                                      
+       102 Dr. Kavya Rangan                    750                                                                                                                                                      
+
+2 rows selected.
+
+SQL> 
+SQL> INSERT INTO medicine (medicine_id, medicine_name, manufacturer, unit_price, stock_qty, expiry_date)
+  2  VALUES (seq_medicine.NEXTVAL, 'Demo Med A', 'Demo Pharma', 10, 100, DATE '2028-12-31');
+
+1 row created.
+
+SQL> SAVEPOINT sp1;
+
+Savepoint created.
+
+SQL> INSERT INTO medicine (medicine_id, medicine_name, manufacturer, unit_price, stock_qty, expiry_date)
+  2  VALUES (seq_medicine.NEXTVAL, 'Demo Med B', 'Demo Pharma', 20, 50, DATE '2028-12-31');
+
+1 row created.
+
+SQL> SAVEPOINT sp2;
+
+Savepoint created.
+
+SQL> UPDATE medicine SET stock_qty = stock_qty - 20 WHERE medicine_name = 'Paracetamol 500mg';
+
+1 row updated.
+
+SQL> SELECT medicine_id, medicine_name, stock_qty FROM medicine
+  2  WHERE  medicine_name IN ('Demo Med A', 'Demo Med B', 'Paracetamol 500mg') ORDER BY medicine_id;
+
+MEDICINE_ID MEDICINE_NAME           STOCK_QTY                                                                                                                                                           
+----------- ---------------------- ----------                                                                                                                                                           
+        201 Paracetamol 500mg             480                                                                                                                                                           
+        215 Demo Med A                    100                                                                                                                                                           
+        216 Demo Med B                     50                                                                                                                                                           
+
+3 rows selected.
+
+SQL> ROLLBACK TO sp2;
+
+Rollback complete.
+
+SQL> SELECT medicine_id, medicine_name, stock_qty FROM medicine
+  2  WHERE  medicine_name IN ('Demo Med A', 'Demo Med B', 'Paracetamol 500mg') ORDER BY medicine_id;
+
+MEDICINE_ID MEDICINE_NAME           STOCK_QTY                                                                                                                                                           
+----------- ---------------------- ----------                                                                                                                                                           
+        201 Paracetamol 500mg             500                                                                                                                                                           
+        215 Demo Med A                    100                                                                                                                                                           
+        216 Demo Med B                     50                                                                                                                                                           
+
+3 rows selected.
+
+SQL> ROLLBACK TO sp1;
+
+Rollback complete.
+
+SQL> SELECT medicine_id, medicine_name, stock_qty FROM medicine
+  2  WHERE  medicine_name IN ('Demo Med A', 'Demo Med B', 'Paracetamol 500mg') ORDER BY medicine_id;
+
+MEDICINE_ID MEDICINE_NAME           STOCK_QTY                                                                                                                                                           
+----------- ---------------------- ----------                                                                                                                                                           
+        201 Paracetamol 500mg             500                                                                                                                                                           
+        215 Demo Med A                    100                                                                                                                                                           
+
+2 rows selected.
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> 
+SQL> DELETE FROM bill WHERE patient_id = (SELECT patient_id FROM patient WHERE name = 'Demo Patient');
+
+1 row deleted.
+
+SQL> DELETE FROM appointment WHERE patient_id = (SELECT patient_id FROM patient WHERE name = 'Demo Patient');
+
+1 row deleted.
+
+SQL> DELETE FROM patient WHERE patient_id = (SELECT patient_id FROM patient WHERE name = 'Demo Patient');
+
+1 row deleted.
+
+SQL> DELETE FROM medicine WHERE medicine_name = 'Demo Med A';
+
+1 row deleted.
+
+SQL> COMMIT;
+
+Commit complete.
+
+SQL> 
+SQL> SELECT 'patient'		AS table_name, COUNT(*) AS total_rows FROM patient
+  2  UNION ALL SELECT 'patient_phone',	    COUNT(*) FROM patient_phone
+  3  UNION ALL SELECT 'emergency_contact',  COUNT(*) FROM emergency_contact
+  4  UNION ALL SELECT 'appointment',	    COUNT(*) FROM appointment
+  5  UNION ALL SELECT 'medicine',	    COUNT(*) FROM medicine
+  6  UNION ALL SELECT 'bill',		    COUNT(*) FROM bill;
+
+TABLE_NAME         TOTAL_ROWS                                                                                                                                                                           
+------------------ ----------                                                                                                                                                                           
+patient                    12                                                                                                                                                                           
+patient_phone              14                                                                                                                                                                           
+emergency_contact          13                                                                                                                                                                           
+appointment                16                                                                                                                                                                           
+medicine                   12                                                                                                                                                                           
+bill                       12                                                                                                                                                                           
+
+6 rows selected.
+
+SQL> 
+SQL> SPOOL OFF

@@ -1,0 +1,571 @@
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q1. SIMPLE: patients living in Vellore, sorted by name
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT patient_id, name, gender, blood_group, city
+  2  FROM   patient
+  3  WHERE  city = 'Vellore'
+  4  ORDER  BY name;
+
+PATIENT_ID NAME                   GENDER     BLO CITY                                                                                                                                                   
+---------- ---------------------- ---------- --- ------------                                                                                                                                           
+      1005 Arjun Nair             Male       AB+ Vellore                                                                                                                                                
+      1008 Fatima Begum           Female     O+  Vellore                                                                                                                                                
+      1001 Ravi Kumar             Male       O+  Vellore                                                                                                                                                
+
+3 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q2. SIMPLE (view): patients aged 50 or above (age is a derived value)
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT patient_id, name, dob, age
+  2  FROM   v_patient_age
+  3  WHERE  age >= 50
+  4  ORDER  BY age DESC;
+
+PATIENT_ID NAME                   DOB              AGE                                                                                                                                                  
+---------- ---------------------- --------- ----------                                                                                                                                                  
+      1008 Fatima Begum           25-APR-57         69                                                                                                                                                  
+      1011 Lakshmi Narayanan      08-OCT-62         64                                                                                                                                                  
+      1005 Arjun Nair             18-SEP-69         57                                                                                                                                                  
+      1010 Rajesh Gupta           17-FEB-73         53                                                                                                                                                  
+
+4 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q3. JOIN: appointment details with patient and doctor names
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT a.appointment_id, a.appt_date, a.appt_time,
+  2  	    p.name AS patient_name, d.name AS doctor_name, a.status
+  3  FROM   appointment a
+  4  	    JOIN patient p ON p.patient_id = a.patient_id
+  5  	    JOIN doctor  d ON d.doctor_id  = a.doctor_id
+  6  ORDER  BY a.appt_date, a.appt_time;
+
+APPOINTMENT_ID APPT_DATE APPT_ PATIENT_NAME           DOCTOR_NAME            STATUS                                                                                                                     
+-------------- --------- ----- ---------------------- ---------------------- ----------                                                                                                                 
+          3001 01-AUG-26 10:00 Arjun Nair             Dr. Arvind Menon       Completed                                                                                                                  
+          3002 14-AUG-26 11:30 Lakshmi Narayanan      Dr. Meena Pillai       Completed                                                                                                                  
+          3003 31-AUG-26 09:30 Priya Sharma           Dr. Farhan Ali         Completed                                                                                                                  
+          3004 09-SEP-26 10:15 Aadhya Venkat          Dr. Rohit Sharma       Completed                                                                                                                  
+          3005 17-SEP-26 14:00 Ravi Kumar             Dr. Farhan Ali         Completed                                                                                                                  
+          3006 24-SEP-26 09:00 Mohammed Irfan         Dr. Kavya Rangan       Completed                                                                                                                  
+          3007 02-OCT-26 15:30 Fatima Begum           Dr. Meena Pillai       Completed                                                                                                                  
+          3008 09-OCT-26 10:00 Rajesh Gupta           Dr. Suresh Iyer        Completed                                                                                                                  
+          3009 12-OCT-26 12:00 Divya Lakshmi          Dr. Vikram Reddy       Completed                                                                                                                  
+          3010 15-OCT-26 16:00 Sneha Reddy            Dr. Lakshmi Devi       Completed                                                                                                                  
+          3011 17-OCT-26 10:30 Karthik Subramanian    Dr. Imran Khan         Cancelled                                                                                                                  
+          3012 19-OCT-26 11:00 Arjun Nair             Dr. Arvind Menon       Completed                                                                                                                  
+          3016 21-OCT-26 10:00 Sanjay Patel           Dr. Lakshmi Devi       Completed                                                                                                                  
+          3013 26-OCT-26 10:00 Priya Sharma           Dr. Farhan Ali         Scheduled                                                                                                                  
+          3014 27-OCT-26 09:30 Sneha Reddy            Dr. Sneha Kulkarni     Scheduled                                                                                                                  
+          3015 28-OCT-26 11:00 Ravi Kumar             Dr. Lakshmi Devi       Scheduled                                                                                                                  
+
+16 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q4. OUTER JOIN: every department with its doctors
+SQL> --     (Emergency has no doctor, so it still appears with NULLs)
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT dep.dept_name, dep.location, doc.name AS doctor_name, doc.specialization
+  2  FROM   department dep
+  3  	    LEFT JOIN doctor doc ON doc.dept_id = dep.dept_id
+  4  ORDER  BY dep.dept_id, doc.name;
+
+DEPT_NAME          LOCATION                   DOCTOR_NAME            SPECIALIZATION                                                                                                                     
+------------------ -------------------------- ---------------------- --------------------                                                                                                               
+Cardiology         Block A, Floor 2           Dr. Arvind Menon       Cardiologist                                                                                                                       
+Cardiology         Block A, Floor 2           Dr. Kavya Rangan       Cardiologist                                                                                                                       
+Neurology          Block A, Floor 3           Dr. Suresh Iyer        Neurologist                                                                                                                        
+Orthopedics        Block B, Floor 1           Dr. Meena Pillai       Orthopedic Surgeon                                                                                                                 
+Pediatrics         Block C, Floor 1           Dr. Anjali Nair        Pediatrician                                                                                                                       
+Pediatrics         Block C, Floor 1           Dr. Rohit Sharma       Pediatrician                                                                                                                       
+General Medicine   Block B, Floor 2           Dr. Farhan Ali         General Physician                                                                                                                  
+General Medicine   Block B, Floor 2           Dr. Lakshmi Devi       General Physician                                                                                                                  
+Dermatology        Block C, Floor 2           Dr. Vikram Reddy       Dermatologist                                                                                                                      
+Gynecology         Block D, Floor 1           Dr. Sneha Kulkarni     Gynecologist                                                                                                                       
+ENT                Block D, Floor 2           Dr. Imran Khan         ENT Specialist                                                                                                                     
+Oncology           Block A, Floor 4           Dr. Priya Raman        Oncologist                                                                                                                         
+Emergency          Main Block, Ground Floor                                                                                                                                                             
+
+13 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q5. JOIN (4 tables): prescription lines with the cost of each line
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT pr.appointment_id, p.name AS patient_name, m.medicine_name,
+  2  	    pr.dosage, pr.quantity, m.unit_price,
+  3  	    pr.quantity * m.unit_price AS line_cost
+  4  FROM   prescribes pr
+  5  	    JOIN medicine    m ON m.medicine_id    = pr.medicine_id
+  6  	    JOIN appointment a ON a.appointment_id = pr.appointment_id
+  7  	    JOIN patient     p ON p.patient_id	   = a.patient_id
+  8  ORDER  BY pr.appointment_id, m.medicine_name;
+
+APPOINTMENT_ID PATIENT_NAME           MEDICINE_NAME        DOSAGE                     QUANTITY UNIT_PRICE  LINE_COST                                                                                    
+-------------- ---------------------- -------------------- ------------------------ ---------- ---------- ----------                                                                                    
+          3001 Arjun Nair             Aspirin 75mg         75mg once daily                  30        1.5         45                                                                                    
+          3001 Arjun Nair             Atorvastatin 10mg    10mg at night                    30        6.5        195                                                                                    
+          3002 Lakshmi Narayanan      Ibuprofen 400mg      400mg twice daily                10        2.2         22                                                                                    
+          3002 Lakshmi Narayanan      Paracetamol 500mg    500mg thrice daily               15        2.5       37.5                                                                                    
+          3003 Priya Sharma           Cetirizine 10mg      10mg once daily                  10        1.8         18                                                                                    
+          3003 Priya Sharma           Salbutamol Inhaler   2 puffs when needed               1        120        120                                                                                    
+          3004 Aadhya Venkat          ORS Sachet           1 sachet after loose sto          6         18        108                                                                                    
+                                                           ol                                                                                                                                           
+                                                                                                                                                                                                        
+          3004 Aadhya Venkat          Paracetamol 500mg    5 ml thrice daily                 9        2.5       22.5                                                                                    
+          3005 Ravi Kumar             Metformin 500mg      500mg twice daily                60        3.2        192                                                                                    
+          3005 Ravi Kumar             Pantoprazole 40mg    40mg before breakfast            14        5.5         77                                                                                    
+          3006 Mohammed Irfan         Amlodipine 5mg       5mg once daily                   30          4        120                                                                                    
+          3006 Mohammed Irfan         Aspirin 75mg         75mg once daily                  30        1.5         45                                                                                    
+          3007 Fatima Begum           Ibuprofen 400mg      400mg twice daily                20        2.2         44                                                                                    
+          3007 Fatima Begum           Pantoprazole 40mg    40mg before breakfast            10        5.5         55                                                                                    
+          3008 Rajesh Gupta           Paracetamol 500mg    500mg when needed                10        2.5         25                                                                                    
+          3009 Divya Lakshmi          Cetirizine 10mg      10mg at night                     7        1.8       12.6                                                                                    
+          3012 Arjun Nair             Aspirin 75mg         75mg once daily                  30        1.5         45                                                                                    
+          3012 Arjun Nair             Atorvastatin 10mg    10mg at night                    30        6.5        195                                                                                    
+          3016 Sanjay Patel           Paracetamol 500mg    500mg thrice daily                9        2.5       22.5                                                                                    
+
+19 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q6. JOIN (view): patients currently admitted (not yet discharged)
+SQL> --     with days stayed so far and the room charge accumulated
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT a.admission_id, p.name AS patient_name, r.room_no, r.room_type,
+  2  	    a.admit_date, s.stay_days,
+  3  	    s.stay_days * r.charge_per_day AS charge_so_far
+  4  FROM   admission a
+  5  	    JOIN patient	  p ON p.patient_id   = a.patient_id
+  6  	    JOIN room		  r ON r.room_no      = a.room_no
+  7  	    JOIN v_admission_stay s ON s.admission_id = a.admission_id
+  8  WHERE  a.discharge_date IS NULL
+  9  ORDER  BY a.admit_date;
+
+ADMISSION_ID PATIENT_NAME              ROOM_NO ROOM_TYPE    ADMIT_DAT  STAY_DAYS CHARGE_SO_FAR                                                                                                          
+------------ ---------------------- ---------- ------------ --------- ---------- -------------                                                                                                          
+        5009 Arjun Nair                    302 ICU          18-OCT-26          7         35000                                                                                                          
+        5010 Lakshmi Narayanan             204 Private      20-OCT-26          5         12500                                                                                                          
+        5011 Sanjay Patel                  105 General      22-OCT-26          3          3000                                                                                                          
+
+3 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q7. GROUP BY + HAVING: doctors who have two or more appointments
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT d.doctor_id, d.name AS doctor_name, d.specialization,
+  2  	    COUNT(*) AS total_appointments
+  3  FROM   appointment a
+  4  	    JOIN doctor d ON d.doctor_id = a.doctor_id
+  5  GROUP  BY d.doctor_id, d.name, d.specialization
+  6  HAVING COUNT(*) >= 2
+  7  ORDER  BY total_appointments DESC, d.name;
+
+ DOCTOR_ID DOCTOR_NAME            SPECIALIZATION       TOTAL_APPOINTMENTS                                                                                                                               
+---------- ---------------------- -------------------- ------------------                                                                                                                               
+       107 Dr. Farhan Ali         General Physician                     3                                                                                                                               
+       108 Dr. Lakshmi Devi       General Physician                     3                                                                                                                               
+       101 Dr. Arvind Menon       Cardiologist                          2                                                                                                                               
+       104 Dr. Meena Pillai       Orthopedic Surgeon                    2                                                                                                                               
+
+4 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q8. AGGREGATE + OUTER JOIN: doctors and fees per department
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT dep.dept_name,
+  2  	    COUNT(doc.doctor_id)		       AS doctors,
+  3  	    NVL(ROUND(AVG(doc.consultation_fee), 2), 0) AS avg_fee,
+  4  	    NVL(MAX(doc.consultation_fee), 0)	       AS max_fee
+  5  FROM   department dep
+  6  	    LEFT JOIN doctor doc ON doc.dept_id = dep.dept_id
+  7  GROUP  BY dep.dept_name
+  8  ORDER  BY doctors DESC, dep.dept_name;
+
+DEPT_NAME             DOCTORS    AVG_FEE    MAX_FEE                                                                                                                                                     
+------------------ ---------- ---------- ----------                                                                                                                                                     
+Cardiology                  2        775        800                                                                                                                                                     
+General Medicine            2        400        400                                                                                                                                                     
+Pediatrics                  2        500        500                                                                                                                                                     
+Dermatology                 1        600        600                                                                                                                                                     
+ENT                         1        550        550                                                                                                                                                     
+Gynecology                  1        650        650                                                                                                                                                     
+Neurology                   1        900        900                                                                                                                                                     
+Oncology                    1       1000       1000                                                                                                                                                     
+Orthopedics                 1        700        700                                                                                                                                                     
+Emergency                   0          0          0                                                                                                                                                     
+
+10 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q9. AGGREGATE: medicine charge per appointment = SUM(quantity x price)
+SQL> --     (matches bill.medicine_charge in the sample data)
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT pr.appointment_id, p.name AS patient_name,
+  2  	    SUM(pr.quantity * m.unit_price) AS medicine_total
+  3  FROM   prescribes pr
+  4  	    JOIN medicine    m ON m.medicine_id    = pr.medicine_id
+  5  	    JOIN appointment a ON a.appointment_id = pr.appointment_id
+  6  	    JOIN patient     p ON p.patient_id	   = a.patient_id
+  7  GROUP  BY pr.appointment_id, p.name
+  8  ORDER  BY pr.appointment_id;
+
+APPOINTMENT_ID PATIENT_NAME           MEDICINE_TOTAL                                                                                                                                                    
+-------------- ---------------------- --------------                                                                                                                                                    
+          3001 Arjun Nair                        240                                                                                                                                                    
+          3002 Lakshmi Narayanan                59.5                                                                                                                                                    
+          3003 Priya Sharma                      138                                                                                                                                                    
+          3004 Aadhya Venkat                   130.5                                                                                                                                                    
+          3005 Ravi Kumar                        269                                                                                                                                                    
+          3006 Mohammed Irfan                    165                                                                                                                                                    
+          3007 Fatima Begum                       99                                                                                                                                                    
+          3008 Rajesh Gupta                       25                                                                                                                                                    
+          3009 Divya Lakshmi                    12.6                                                                                                                                                    
+          3012 Arjun Nair                        240                                                                                                                                                    
+          3016 Sanjay Patel                     22.5                                                                                                                                                    
+
+11 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q10. AGGREGATE: most prescribed medicines
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT m.medicine_name,
+  2  	    COUNT(*)	       AS times_prescribed,
+  3  	    SUM(pr.quantity)   AS total_quantity
+  4  FROM   prescribes pr
+  5  	    JOIN medicine m ON m.medicine_id = pr.medicine_id
+  6  GROUP  BY m.medicine_name
+  7  ORDER  BY times_prescribed DESC, total_quantity DESC;
+
+MEDICINE_NAME        TIMES_PRESCRIBED TOTAL_QUANTITY                                                                                                                                                    
+-------------------- ---------------- --------------                                                                                                                                                    
+Paracetamol 500mg                   4             43                                                                                                                                                    
+Aspirin 75mg                        3             90                                                                                                                                                    
+Atorvastatin 10mg                   2             60                                                                                                                                                    
+Ibuprofen 400mg                     2             30                                                                                                                                                    
+Pantoprazole 40mg                   2             24                                                                                                                                                    
+Cetirizine 10mg                     2             17                                                                                                                                                    
+Metformin 500mg                     1             60                                                                                                                                                    
+Amlodipine 5mg                      1             30                                                                                                                                                    
+ORS Sachet                          1              6                                                                                                                                                    
+Salbutamol Inhaler                  1              1                                                                                                                                                    
+
+10 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q11. HAVING: patients who registered more than one phone number
+SQL> --      (multivalued attribute)
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT p.patient_id, p.name AS patient_name, COUNT(*) AS phone_count
+  2  FROM   patient p
+  3  	    JOIN patient_phone ph ON ph.patient_id = p.patient_id
+  4  GROUP  BY p.patient_id, p.name
+  5  HAVING COUNT(*) > 1;
+
+PATIENT_ID PATIENT_NAME           PHONE_COUNT                                                                                                                                                           
+---------- ---------------------- -----------                                                                                                                                                           
+      1001 Ravi Kumar                       2                                                                                                                                                           
+      1004 Divya Lakshmi                    2                                                                                                                                                           
+
+2 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q12. AGGREGATE with CASE: room availability by room type
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT room_type,
+  2  	    MIN(charge_per_day) 				 AS daily_charge,
+  3  	    COUNT(*)						 AS total_rooms,
+  4  	    SUM(CASE WHEN status = 'Available'	 THEN 1 ELSE 0 END) AS available,
+  5  	    SUM(CASE WHEN status = 'Occupied'	 THEN 1 ELSE 0 END) AS occupied,
+  6  	    SUM(CASE WHEN status = 'Maintenance' THEN 1 ELSE 0 END) AS maintenance
+  7  FROM   room
+  8  GROUP  BY room_type
+  9  ORDER  BY daily_charge;
+
+ROOM_TYPE    DAILY_CHARGE TOTAL_ROOMS  AVAILABLE   OCCUPIED MAINTENANCE                                                                                                                                 
+------------ ------------ ----------- ---------- ---------- -----------                                                                                                                                 
+General              1000           6          4          1           1                                                                                                                                 
+Private              2500           4          3          1           0                                                                                                                                 
+ICU                  5000           2          1          1           0                                                                                                                                 
+
+3 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q13. AGGREGATE (view): bills and amount by payment status
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT payment_status,
+  2  	    COUNT(*)	      AS no_of_bills,
+  3  	    SUM(total_amount) AS total_amount
+  4  FROM   v_bill_total
+  5  GROUP  BY payment_status;
+
+PAYMENT_ST NO_OF_BILLS TOTAL_AMOUNT                                                                                                                                                                     
+---------- ----------- ------------                                                                                                                                                                     
+Paid                 9      57129.6                                                                                                                                                                     
+Pending              3      14121.5                                                                                                                                                                     
+
+2 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q14. AGGREGATE + NVL: revenue by payment mode
+SQL> --      (bills with no mode yet are shown as 'Not yet paid')
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT NVL(payment_mode, 'Not yet paid') AS payment_mode,
+  2  	    COUNT(*)			      AS no_of_bills,
+  3  	    SUM(total_amount)		      AS total_amount
+  4  FROM   v_bill_total
+  5  GROUP  BY NVL(payment_mode, 'Not yet paid')
+  6  ORDER  BY total_amount DESC;
+
+PAYMENT_MODE NO_OF_BILLS TOTAL_AMOUNT                                                                                                                                                                   
+------------ ----------- ------------                                                                                                                                                                   
+Insurance              2        26955                                                                                                                                                                   
+Card                   3      17468.5                                                                                                                                                                   
+Not yet paid           3      14121.5                                                                                                                                                                   
+Cash                   2       8555.5                                                                                                                                                                   
+UPI                    2       4150.6                                                                                                                                                                   
+
+5 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q15. NESTED (scalar subquery): doctors charging more than the average fee
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT doctor_id, name AS doctor_name, specialization, consultation_fee
+  2  FROM   doctor
+  3  WHERE  consultation_fee > (SELECT AVG(consultation_fee) FROM doctor)
+  4  ORDER  BY consultation_fee DESC;
+
+ DOCTOR_ID DOCTOR_NAME            SPECIALIZATION       CONSULTATION_FEE                                                                                                                                 
+---------- ---------------------- -------------------- ----------------                                                                                                                                 
+       112 Dr. Priya Raman        Oncologist                       1000                                                                                                                                 
+       103 Dr. Suresh Iyer        Neurologist                       900                                                                                                                                 
+       101 Dr. Arvind Menon       Cardiologist                      800                                                                                                                                 
+       102 Dr. Kavya Rangan       Cardiologist                      750                                                                                                                                 
+       104 Dr. Meena Pillai       Orthopedic Surgeon                700                                                                                                                                 
+       110 Dr. Sneha Kulkarni     Gynecologist                      650                                                                                                                                 
+
+6 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q16. NESTED (IN): patients who have ever been admitted to an ICU room
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT patient_id, name AS patient_name, blood_group, medical_history
+  2  FROM   patient
+  3  WHERE  patient_id IN (SELECT a.patient_id
+  4  			   FROM   admission a
+  5  				  JOIN room r ON r.room_no = a.room_no
+  6  			   WHERE  r.room_type = 'ICU');
+
+PATIENT_ID PATIENT_NAME           BLO                                                                                                                                                                   
+---------- ---------------------- ---                                                                                                                                                                   
+MEDICAL_HISTORY                                                                                                                                                                                         
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+      1005 Arjun Nair             AB+                                                                                                                                                                   
+Coronary artery disease                                                                                                                                                                                 
+                                                                                                                                                                                                        
+
+1 row selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q17. NESTED (NOT EXISTS): doctors who have no appointment yet
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT d.doctor_id, d.name AS doctor_name, d.specialization
+  2  FROM   doctor d
+  3  WHERE  NOT EXISTS (SELECT 1
+  4  			FROM   appointment a
+  5  			WHERE  a.doctor_id = d.doctor_id);
+
+ DOCTOR_ID DOCTOR_NAME            SPECIALIZATION                                                                                                                                                        
+---------- ---------------------- --------------------                                                                                                                                                  
+       112 Dr. Priya Raman        Oncologist                                                                                                                                                            
+       106 Dr. Anjali Nair        Pediatrician                                                                                                                                                          
+
+2 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q18. NESTED (view): bills above the average bill amount
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT b.bill_id, p.name AS patient_name, b.total_amount, b.payment_status
+  2  FROM   v_bill_total b
+  3  	    JOIN patient p ON p.patient_id = b.patient_id
+  4  WHERE  b.total_amount > (SELECT AVG(total_amount) FROM v_bill_total)
+  5  ORDER  BY b.total_amount DESC;
+
+   BILL_ID PATIENT_NAME           TOTAL_AMOUNT PAYMENT_ST                                                                                                                                               
+---------- ---------------------- ------------ ----------                                                                                                                                               
+      7001 Arjun Nair                    21040 Paid                                                                                                                                                     
+      7007 Fatima Begum                  13299 Pending                                                                                                                                                  
+      7002 Lakshmi Narayanan            8259.5 Paid                                                                                                                                                     
+      7005 Ravi Kumar                     8169 Paid                                                                                                                                                     
+
+4 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q19. NESTED (correlated scalar subquery): last appointment date
+SQL> --      and number of visits for every patient
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT p.patient_id, p.name AS patient_name,
+  2  	    (SELECT MAX(a.appt_date)
+  3  	     FROM   appointment a
+  4  	     WHERE  a.patient_id = p.patient_id) AS last_visit,
+  5  	    (SELECT COUNT(*)
+  6  	     FROM   appointment a
+  7  	     WHERE  a.patient_id = p.patient_id) AS visits
+  8  FROM   patient p
+  9  ORDER  BY last_visit DESC;
+
+PATIENT_ID PATIENT_NAME           LAST_VISI     VISITS                                                                                                                                                  
+---------- ---------------------- --------- ----------                                                                                                                                                  
+      1001 Ravi Kumar             28-OCT-26          2                                                                                                                                                  
+      1006 Sneha Reddy            27-OCT-26          2                                                                                                                                                  
+      1002 Priya Sharma           26-OCT-26          2                                                                                                                                                  
+      1012 Sanjay Patel           21-OCT-26          1                                                                                                                                                  
+      1005 Arjun Nair             19-OCT-26          2                                                                                                                                                  
+      1007 Karthik Subramanian    17-OCT-26          1                                                                                                                                                  
+      1004 Divya Lakshmi          12-OCT-26          1                                                                                                                                                  
+      1010 Rajesh Gupta           09-OCT-26          1                                                                                                                                                  
+      1008 Fatima Begum           02-OCT-26          1                                                                                                                                                  
+      1003 Mohammed Irfan         24-SEP-26          1                                                                                                                                                  
+      1009 Aadhya Venkat          09-SEP-26          1                                                                                                                                                  
+      1011 Lakshmi Narayanan      14-AUG-26          1                                                                                                                                                  
+
+12 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q20. SET OPERATOR (MINUS): patients who booked appointments
+SQL> --      but were never admitted
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT patient_id, name AS patient_name, city
+  2  FROM   patient
+  3  WHERE  patient_id IN (SELECT patient_id FROM appointment
+  4  			   MINUS
+  5  			   SELECT patient_id FROM admission)
+  6  ORDER  BY patient_id;
+
+PATIENT_ID PATIENT_NAME           CITY                                                                                                                                                                  
+---------- ---------------------- ------------                                                                                                                                                          
+      1004 Divya Lakshmi          Katpadi                                                                                                                                                               
+      1006 Sneha Reddy            Bengaluru                                                                                                                                                             
+      1007 Karthik Subramanian    Ranipet                                                                                                                                                               
+
+3 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q21. SQL FUNCTIONS (string): UPPER, LENGTH, SUBSTR, INSTR, ||
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT UPPER(name) 			     AS doctor_name,
+  2  	    LENGTH(name)			     AS name_length,
+  3  	    SUBSTR(email, 1, INSTR(email, '@') - 1)  AS username,
+  4  	    SUBSTR(email, INSTR(email, '@') + 1)     AS domain,
+  5  	    'XXXXXX' || SUBSTR(phone, -4)	     AS masked_phone
+  6  FROM   doctor
+  7  ORDER  BY name;
+
+DOCTOR_NAME            NAME_LENGTH USERNAME         DOMAIN             MASKED_PHONE                                                                                                                     
+---------------------- ----------- ---------------- ------------------ ------------                                                                                                                     
+DR. ANJALI NAIR                 15 anjali.nair      careplus.in        XXXXXX1106                                                                                                                       
+DR. ARVIND MENON                16 arvind.menon     careplus.in        XXXXXX1101                                                                                                                       
+DR. FARHAN ALI                  14 farhan.ali       careplus.in        XXXXXX1107                                                                                                                       
+DR. IMRAN KHAN                  14 imran.khan       careplus.in        XXXXXX1111                                                                                                                       
+DR. KAVYA RANGAN                16 kavya.rangan     careplus.in        XXXXXX1102                                                                                                                       
+DR. LAKSHMI DEVI                16 lakshmi.devi     careplus.in        XXXXXX1108                                                                                                                       
+DR. MEENA PILLAI                16 meena.pillai     careplus.in        XXXXXX1104                                                                                                                       
+DR. PRIYA RAMAN                 15 priya.raman      careplus.in        XXXXXX1112                                                                                                                       
+DR. ROHIT SHARMA                16 rohit.sharma     careplus.in        XXXXXX1105                                                                                                                       
+DR. SNEHA KULKARNI              18 sneha.kulkarni   careplus.in        XXXXXX1110                                                                                                                       
+DR. SURESH IYER                 15 suresh.iyer      careplus.in        XXXXXX1103                                                                                                                       
+DR. VIKRAM REDDY                16 vikram.reddy     careplus.in        XXXXXX1109                                                                                                                       
+
+12 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q22. SQL FUNCTIONS (date) + CASE: medicines that are expired or
+SQL> --      will expire within 6 months of today (depends on SYSDATE)
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT medicine_name, expiry_date, stock_qty,
+  2  	    TRUNC(expiry_date - SYSDATE) AS days_left,
+  3  	    CASE WHEN expiry_date < SYSDATE		  THEN 'EXPIRED'
+  4  		 WHEN expiry_date <= ADD_MONTHS(SYSDATE,3) THEN 'EXPIRING SOON'
+  5  		 ELSE 'WATCH'
+  6  	    END AS shelf_status
+  7  FROM   medicine
+  8  WHERE  expiry_date <= ADD_MONTHS(SYSDATE, 6)
+  9  ORDER  BY expiry_date;
+
+MEDICINE_NAME        EXPIRY_DA  STOCK_QTY  DAYS_LEFT SHELF_STATUS                                                                                                                                       
+-------------------- --------- ---------- ---------- --------------                                                                                                                                     
+Azithromycin 500mg   31-AUG-26        200        -55 EXPIRED                                                                                                                                            
+ORS Sachet           20-NOV-26        150         25 EXPIRING SOON                                                                                                                                      
+Salbutamol Inhaler   15-DEC-26         60         50 EXPIRING SOON                                                                                                                                      
+Ibuprofen 400mg      28-FEB-27         45        125 WATCH                                                                                                                                              
+
+4 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q23. SQL FUNCTIONS (TO_CHAR) + GROUP BY: appointments per month
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT TO_CHAR(appt_date, 'YYYY-MM')			   AS appt_month,
+  2  	    COUNT(*)						   AS total,
+  3  	    SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END)  AS completed,
+  4  	    SUM(CASE WHEN status = 'Scheduled' THEN 1 ELSE 0 END)  AS scheduled,
+  5  	    SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END)  AS cancelled
+  6  FROM   appointment
+  7  GROUP  BY TO_CHAR(appt_date, 'YYYY-MM')
+  8  ORDER  BY appt_month;
+
+APPT_MO      TOTAL  COMPLETED  SCHEDULED  CANCELLED                                                                                                                                                     
+------- ---------- ---------- ---------- ----------                                                                                                                                                     
+2026-08          3          3          0          0                                                                                                                                                     
+2026-09          3          3          0          0                                                                                                                                                     
+2026-10         10          6          3          1                                                                                                                                                     
+
+3 rows selected.
+
+SQL> 
+SQL> -- ---------------------------------------------------------------------
+SQL> -- Q24. ANALYTIC FUNCTION: rank patients by total amount billed
+SQL> -- ---------------------------------------------------------------------
+SQL> SELECT *
+  2  FROM  (SELECT p.name AS patient_name,
+  3  		   SUM(b.total_amount) AS total_billed,
+  4  		   RANK() OVER (ORDER BY SUM(b.total_amount) DESC) AS bill_rank
+  5  	    FROM   v_bill_total b
+  6  		   JOIN patient p ON p.patient_id = b.patient_id
+  7  	    GROUP  BY p.name)
+  8  WHERE bill_rank <= 5
+  9  ORDER BY bill_rank;
+
+PATIENT_NAME           TOTAL_BILLED  BILL_RANK                                                                                                                                                          
+---------------------- ------------ ----------                                                                                                                                                          
+Arjun Nair                    22080          1                                                                                                                                                          
+Fatima Begum                  13299          2                                                                                                                                                          
+Lakshmi Narayanan            8259.5          3                                                                                                                                                          
+Ravi Kumar                     8169          4                                                                                                                                                          
+Mohammed Irfan                 5915          5                                                                                                                                                          
+
+5 rows selected.
+
+SQL> 
+SQL> SPOOL OFF

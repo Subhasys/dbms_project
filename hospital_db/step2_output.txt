@@ -1,0 +1,502 @@
+SQL> @E:\hospital_db\02_data.sql
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+1 row created.
+
+
+Commit complete.
+
+SQL> SELECT 'DEPARTMENT' AS table_name, COUNT(*) AS total_rows FROM department
+  2  UNION ALL SELECT 'DOCTOR', COUNT(*) FROM doctor
+  3  UNION ALL SELECT 'PATIENT', COUNT(*) FROM patient
+  4  UNION ALL SELECT 'PATIENT_PHONE', COUNT(*) FROM patient_phone
+  5  UNION ALL SELECT 'EMERGENCY_CONTACT', COUNT(*) FROM emergency_contact
+  6  UNION ALL SELECT 'MEDICINE', COUNT(*) FROM medicine
+  7  UNION ALL SELECT 'ROOM', COUNT(*) FROM room
+  8  UNION ALL SELECT 'APPOINTMENT', COUNT(*) FROM appointment
+  9  UNION ALL SELECT 'PRESCRIBES', COUNT(*) FROM prescribes
+ 10  UNION ALL SELECT 'ADMISSION', COUNT(*) FROM admission
+ 11  UNION ALL SELECT 'BILL', COUNT(*) FROM bill;
+
+TABLE_NAME        TOTAL_ROWS                                                                                                                          
+----------------- ----------                                                                                                                          
+DEPARTMENT                10                                                                                                                          
+DOCTOR                    12                                                                                                                          
+PATIENT                   12                                                                                                                          
+PATIENT_PHONE             14                                                                                                                          
+EMERGENCY_CONTACT         13                                                                                                                          
+MEDICINE                  12                                                                                                                          
+ROOM                      12                                                                                                                          
+APPOINTMENT               16                                                                                                                          
+PRESCRIBES                19                                                                                                                          
+ADMISSION                 11                                                                                                                          
+BILL                      12                                                                                                                          
+
+11 rows selected.
+
+SQL> SET LINESIZE 150
+SQL> SELECT * FROM department;
+
+   DEPT_ID DEPT_NAME                                          LOCATION                                                                                
+---------- -------------------------------------------------- --------------------------------------------------                                      
+         1 Cardiology                                         Block A, Floor 2                                                                        
+         2 Neurology                                          Block A, Floor 3                                                                        
+         3 Orthopedics                                        Block B, Floor 1                                                                        
+         4 Pediatrics                                         Block C, Floor 1                                                                        
+         5 General Medicine                                   Block B, Floor 2                                                                        
+         6 Dermatology                                        Block C, Floor 2                                                                        
+         7 Gynecology                                         Block D, Floor 1                                                                        
+         8 ENT                                                Block D, Floor 2                                                                        
+         9 Oncology                                           Block A, Floor 4                                                                        
+        10 Emergency                                          Main Block, Ground Floor                                                                
+
+10 rows selected.
+
+SQL> SELECT doctor_id, name, specialization, consultation_fee FROM doctor;
+
+ DOCTOR_ID NAME                                                         SPECIALIZATION                                     CONSULTATION_FEE           
+---------- ------------------------------------------------------------ -------------------------------------------------- ----------------           
+       101 Dr. Arvind Menon                                             Cardiologist                                                    800           
+       102 Dr. Kavya Rangan                                             Cardiologist                                                    750           
+       103 Dr. Suresh Iyer                                              Neurologist                                                     900           
+       104 Dr. Meena Pillai                                             Orthopedic Surgeon                                              700           
+       105 Dr. Rohit Sharma                                             Pediatrician                                                    500           
+       106 Dr. Anjali Nair                                              Pediatrician                                                    500           
+       107 Dr. Farhan Ali                                               General Physician                                               400           
+       108 Dr. Lakshmi Devi                                             General Physician                                               400           
+       109 Dr. Vikram Reddy                                             Dermatologist                                                   600           
+       110 Dr. Sneha Kulkarni                                           Gynecologist                                                    650           
+       111 Dr. Imran Khan                                               ENT Specialist                                                  550           
+
+ DOCTOR_ID NAME                                                         SPECIALIZATION                                     CONSULTATION_FEE           
+---------- ------------------------------------------------------------ -------------------------------------------------- ----------------           
+       112 Dr. Priya Raman                                              Oncologist                                                     1000           
+
+12 rows selected.
+
+SQL> SPOOL OFF

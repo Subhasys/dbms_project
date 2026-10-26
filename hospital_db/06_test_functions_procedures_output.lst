@@ -1,0 +1,576 @@
+SQL> 
+SQL> VARIABLE v_appt1 NUMBER
+SQL> VARIABLE v_appt2 NUMBER
+SQL> VARIABLE v_adm   NUMBER
+SQL> VARIABLE v_bill  NUMBER
+SQL> 
+SQL> -- =====================================================================
+SQL> -- PART A : FUNCTIONS
+SQL> -- =====================================================================
+SQL> PROMPT
+
+SQL> PROMPT ===== A1 fn_calc_room_charge : same values as the stored room charges =====
+===== A1 fn_calc_room_charge : same values as the stored room charges =====
+SQL> PROMPT Expected: 5001=20000, 5002=7500, 5003=3000, 5004=4000, 5005=7500, 5006=5000, 5007=12500, 5008=3000
+Expected: 5001=20000, 5002=7500, 5003=3000, 5004=4000, 5005=7500, 5006=5000, 5007=12500, 5008=3000
+SQL> SELECT admission_id, patient_id, fn_calc_room_charge(admission_id) AS room_charge
+  2  FROM   admission
+  3  WHERE  discharge_date IS NOT NULL
+  4  ORDER  BY admission_id;
+
+ADMISSION_ID PATIENT_ID ROOM_CHARGE                                                                                                                                                                     
+------------ ---------- -----------                                                                                                                                                                     
+        5001       1005       20000                                                                                                                                                                     
+        5002       1011        7500                                                                                                                                                                     
+        5003       1002        3000                                                                                                                                                                     
+        5004       1009        4000                                                                                                                                                                     
+        5005       1001        7500                                                                                                                                                                     
+        5006       1003        5000                                                                                                                                                                     
+        5007       1008       12500                                                                                                                                                                     
+        5008       1010        3000                                                                                                                                                                     
+
+8 rows selected.
+
+SQL> 
+SQL> PROMPT ===== A2 fn_calc_room_charge on an open admission (still staying) =====
+===== A2 fn_calc_room_charge on an open admission (still staying) =====
+SQL> SELECT admission_id, patient_id, fn_calc_room_charge(admission_id) AS charge_so_far
+  2  FROM   admission
+  3  WHERE  discharge_date IS NULL
+  4  ORDER  BY admission_id;
+
+ADMISSION_ID PATIENT_ID CHARGE_SO_FAR                                                                                                                                                                   
+------------ ---------- -------------                                                                                                                                                                   
+        5009       1005         35000                                                                                                                                                                   
+        5010       1011         12500                                                                                                                                                                   
+        5011       1012          3000                                                                                                                                                                   
+
+3 rows selected.
+
+SQL> 
+SQL> PROMPT ===== A3 fn_medicine_charge : Expected 3001=240, 3002=59.5, 3005=269, 3010=0 =====
+===== A3 fn_medicine_charge : Expected 3001=240, 3002=59.5, 3005=269, 3010=0 =====
+SQL> SELECT appointment_id, fn_medicine_charge(appointment_id) AS medicine_charge
+  2  FROM   appointment
+  3  WHERE  appointment_id IN (3001, 3002, 3005, 3010)
+  4  ORDER  BY appointment_id;
+
+APPOINTMENT_ID MEDICINE_CHARGE                                                                                                                                                                          
+-------------- ---------------                                                                                                                                                                          
+          3001             240                                                                                                                                                                          
+          3002            59.5                                                                                                                                                                          
+          3005             269                                                                                                                                                                          
+          3010               0                                                                                                                                                                          
+
+4 rows selected.
+
+SQL> 
+SQL> PROMPT ===== A4 fn_is_slot_free : Expected N (taken), Y (free), N (cancelled slot still held) =====
+===== A4 fn_is_slot_free : Expected N (taken), Y (free), N (cancelled slot still held) =====
+SQL> SELECT fn_is_slot_free(101, DATE '2026-08-01', '10:00') AS taken_slot,
+  2  	    fn_is_slot_free(101, DATE '2026-11-02', '10:00') AS free_slot,
+  3  	    fn_is_slot_free(111, DATE '2026-10-17', '10:30') AS cancelled_slot
+  4  FROM   dual;
+
+TAKEN_SLOT                                                                                                                                                                                              
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+FREE_SLOT                                                                                                                                                                                               
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CANCELLED_SLOT                                                                                                                                                                                          
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+N                                                                                                                                                                                                       
+Y                                                                                                                                                                                                       
+N                                                                                                                                                                                                       
+                                                                                                                                                                                                        
+
+1 row selected.
+
+SQL> 
+SQL> -- =====================================================================
+SQL> -- PART B : sp_book_appointment and sp_cancel_appointment
+SQL> -- =====================================================================
+SQL> PROMPT
+
+SQL> PROMPT ===== B1 Book an appointment (Divya Lakshmi with Dr. Anjali Nair) =====
+===== B1 Book an appointment (Divya Lakshmi with Dr. Anjali Nair) =====
+SQL> EXEC sp_book_appointment(1004, 106, DATE '2026-10-31', '11:00', :v_appt1);
+Appointment 3019 booked for 31-Oct-2026 at 11:00                                                                                                                                                        
+
+PL/SQL procedure successfully completed.
+
+SQL> PRINT v_appt1
+
+   V_APPT1                                                                                                                                                                                              
+----------                                                                                                                                                                                              
+      3019                                                                                                                                                                                              
+
+SQL> 
+SQL> PROMPT ===== B2 Same doctor, same slot again : ORA-20014 expected =====
+===== B2 Same doctor, same slot again : ORA-20014 expected =====
+SQL> EXEC sp_book_appointment(1005, 106, DATE '2026-10-31', '11:00', :v_appt2);
+BEGIN sp_book_appointment(1005, 106, DATE '2026-10-31', '11:00', :v_appt2); END;
+
+*
+ERROR at line 1:
+ORA-20014: Doctor 106 already has an appointment on 31-Oct-2026 at 11:00 
+ORA-06512: at "SYSTEM.SP_BOOK_APPOINTMENT", line 29 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== B3 Date in the past : ORA-20013 expected =====
+===== B3 Date in the past : ORA-20013 expected =====
+SQL> EXEC sp_book_appointment(1004, 106, DATE '2026-01-01', '11:00', :v_appt2);
+BEGIN sp_book_appointment(1004, 106, DATE '2026-01-01', '11:00', :v_appt2); END;
+
+*
+ERROR at line 1:
+ORA-20013: Appointment date cannot be in the past 
+ORA-06512: at "SYSTEM.SP_BOOK_APPOINTMENT", line 21 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== B4 Wrong time format : ORA-20015 expected =====
+===== B4 Wrong time format : ORA-20015 expected =====
+SQL> EXEC sp_book_appointment(1004, 106, DATE '2026-11-03', '25:99', :v_appt2);
+BEGIN sp_book_appointment(1004, 106, DATE '2026-11-03', '25:99', :v_appt2); END;
+
+*
+ERROR at line 1:
+ORA-20015: Time must be in HH24:MI format, for example 10:30 
+ORA-06512: at "SYSTEM.SP_BOOK_APPOINTMENT", line 25 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== B5 Unknown patient / unknown doctor : ORA-20011 and ORA-20012 expected =====
+===== B5 Unknown patient / unknown doctor : ORA-20011 and ORA-20012 expected =====
+SQL> EXEC sp_book_appointment(9999, 106, DATE '2026-11-03', '10:00', :v_appt2);
+BEGIN sp_book_appointment(9999, 106, DATE '2026-11-03', '10:00', :v_appt2); END;
+
+*
+ERROR at line 1:
+ORA-20011: Patient 9999 not found 
+ORA-06512: at "SYSTEM.SP_BOOK_APPOINTMENT", line 12 
+ORA-06512: at line 1 
+
+
+SQL> EXEC sp_book_appointment(1004, 999, DATE '2026-11-03', '10:00', :v_appt2);
+BEGIN sp_book_appointment(1004, 999, DATE '2026-11-03', '10:00', :v_appt2); END;
+
+*
+ERROR at line 1:
+ORA-20012: Doctor 999 not found 
+ORA-06512: at "SYSTEM.SP_BOOK_APPOINTMENT", line 17 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== B6 Cancel the booking =====
+===== B6 Cancel the booking =====
+SQL> EXEC sp_cancel_appointment(:v_appt1);
+Appointment 3019 cancelled                                                                                                                                                                              
+
+PL/SQL procedure successfully completed.
+
+SQL> SELECT appointment_id, status FROM appointment WHERE appointment_id = :v_appt1;
+
+APPOINTMENT_ID STATUS                                                                                                                                                                                   
+-------------- ----------                                                                                                                                                                               
+          3019 Cancelled                                                                                                                                                                                
+
+1 row selected.
+
+SQL> 
+SQL> PROMPT ===== B7 Cancel again : ORA-20022 expected =====
+===== B7 Cancel again : ORA-20022 expected =====
+SQL> EXEC sp_cancel_appointment(:v_appt1);
+BEGIN sp_cancel_appointment(:v_appt1); END;
+
+*
+ERROR at line 1:
+ORA-20022: Only Scheduled appointments can be cancelled (current status: Cancelled) 
+ORA-06512: at "SYSTEM.SP_CANCEL_APPOINTMENT", line 17 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== B8 Cancel a Completed appointment (3001) : ORA-20022 expected =====
+===== B8 Cancel a Completed appointment (3001) : ORA-20022 expected =====
+SQL> EXEC sp_cancel_appointment(3001);
+BEGIN sp_cancel_appointment(3001); END;
+
+*
+ERROR at line 1:
+ORA-20022: Only Scheduled appointments can be cancelled (current status: Completed) 
+ORA-06512: at "SYSTEM.SP_CANCEL_APPOINTMENT", line 17 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== B9 Book a second appointment that will be used below =====
+===== B9 Book a second appointment that will be used below =====
+SQL> EXEC sp_book_appointment(1004, 106, DATE '2026-11-02', '09:00', :v_appt2);
+Appointment 3020 booked for 02-Nov-2026 at 09:00                                                                                                                                                        
+
+PL/SQL procedure successfully completed.
+
+SQL> PRINT v_appt2
+
+   V_APPT2                                                                                                                                                                                              
+----------                                                                                                                                                                                              
+      3020                                                                                                                                                                                              
+
+SQL> 
+SQL> -- =====================================================================
+SQL> -- PART C : sp_prescribe_medicine
+SQL> -- =====================================================================
+SQL> PROMPT
+
+SQL> PROMPT ===== C1 Stock of Paracetamol BEFORE prescribing (500) =====
+===== C1 Stock of Paracetamol BEFORE prescribing (500) =====
+SQL> SELECT medicine_id, medicine_name, stock_qty FROM medicine WHERE medicine_id = 201;
+
+MEDICINE_ID MEDICINE_NAME           STOCK_QTY                                                                                                                                                           
+----------- ---------------------- ----------                                                                                                                                                           
+        201 Paracetamol 500mg             500                                                                                                                                                           
+
+1 row selected.
+
+SQL> 
+SQL> PROMPT ===== C2 Prescribe Paracetamol, quantity 6 =====
+===== C2 Prescribe Paracetamol, quantity 6 =====
+SQL> EXEC sp_prescribe_medicine(:v_appt2, 201, '500mg twice daily', 3, 6);
+Paracetamol 500mg prescribed (qty 6). Stock left: 494                                                                                                                                                   
+
+PL/SQL procedure successfully completed.
+
+SQL> 
+SQL> PROMPT ===== C3 Stock AFTER prescribing (494) and the prescription row =====
+===== C3 Stock AFTER prescribing (494) and the prescription row =====
+SQL> SELECT medicine_id, medicine_name, stock_qty FROM medicine WHERE medicine_id = 201;
+
+MEDICINE_ID MEDICINE_NAME           STOCK_QTY                                                                                                                                                           
+----------- ---------------------- ----------                                                                                                                                                           
+        201 Paracetamol 500mg             494                                                                                                                                                           
+
+1 row selected.
+
+SQL> SELECT appointment_id, medicine_id, dosage, duration_days, quantity
+  2  FROM   prescribes WHERE appointment_id = :v_appt2;
+
+APPOINTMENT_ID MEDICINE_ID DOSAGE                   DURATION_DAYS   QUANTITY                                                                                                                            
+-------------- ----------- ------------------------ ------------- ----------                                                                                                                            
+          3020         201 500mg twice daily                    3          6                                                                                                                            
+
+1 row selected.
+
+SQL> 
+SQL> PROMPT ===== C4 Same medicine again : ORA-20036 expected =====
+===== C4 Same medicine again : ORA-20036 expected =====
+SQL> EXEC sp_prescribe_medicine(:v_appt2, 201, '500mg once daily', 2, 2);
+BEGIN sp_prescribe_medicine(:v_appt2, 201, '500mg once daily', 2, 2); END;
+
+*
+ERROR at line 1:
+ORA-20036: Paracetamol 500mg is already prescribed in appointment 3020 
+ORA-06512: at "SYSTEM.SP_PRESCRIBE_MEDICINE", line 52 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== C5 Expired medicine (Azithromycin) : ORA-20034 expected =====
+===== C5 Expired medicine (Azithromycin) : ORA-20034 expected =====
+SQL> EXEC sp_prescribe_medicine(:v_appt2, 212, '500mg once daily', 3, 3);
+BEGIN sp_prescribe_medicine(:v_appt2, 212, '500mg once daily', 3, 3); END;
+
+*
+ERROR at line 1:
+ORA-20034: Azithromycin 500mg expired on 31-Aug-2026 
+ORA-06512: at "SYSTEM.SP_PRESCRIBE_MEDICINE", line 39 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== C6 Not enough stock (Ibuprofen has 45) : ORA-20035 expected =====
+===== C6 Not enough stock (Ibuprofen has 45) : ORA-20035 expected =====
+SQL> EXEC sp_prescribe_medicine(:v_appt2, 209, '400mg twice daily', 5, 100);
+BEGIN sp_prescribe_medicine(:v_appt2, 209, '400mg twice daily', 5, 100); END;
+
+*
+ERROR at line 1:
+ORA-20035: Not enough stock of Ibuprofen 400mg (available 45, needed 100) 
+ORA-06512: at "SYSTEM.SP_PRESCRIBE_MEDICINE", line 43 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== C7 Cancelled appointment : ORA-20032 expected =====
+===== C7 Cancelled appointment : ORA-20032 expected =====
+SQL> EXEC sp_prescribe_medicine(:v_appt1, 206, '10mg at night', 5, 5);
+BEGIN sp_prescribe_medicine(:v_appt1, 206, '10mg at night', 5, 5); END;
+
+*
+ERROR at line 1:
+ORA-20032: Cannot prescribe for a cancelled appointment 
+ORA-06512: at "SYSTEM.SP_PRESCRIBE_MEDICINE", line 24 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== C8 Unknown appointment / unknown medicine : ORA-20031 and ORA-20033 expected =====
+===== C8 Unknown appointment / unknown medicine : ORA-20031 and ORA-20033 expected =====
+SQL> EXEC sp_prescribe_medicine(9999, 201, '500mg', 1, 1);
+BEGIN sp_prescribe_medicine(9999, 201, '500mg', 1, 1); END;
+
+*
+ERROR at line 1:
+ORA-20031: Appointment 9999 not found 
+ORA-06512: at "SYSTEM.SP_PRESCRIBE_MEDICINE", line 20 
+ORA-06512: at line 1 
+
+
+SQL> EXEC sp_prescribe_medicine(:v_appt2, 999, '500mg', 1, 1);
+BEGIN sp_prescribe_medicine(:v_appt2, 999, '500mg', 1, 1); END;
+
+*
+ERROR at line 1:
+ORA-20033: Medicine 999 not found 
+ORA-06512: at "SYSTEM.SP_PRESCRIBE_MEDICINE", line 35 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> -- =====================================================================
+SQL> -- PART D : sp_admit_patient
+SQL> -- =====================================================================
+SQL> PROMPT
+
+SQL> PROMPT ===== D1 Admit Divya Lakshmi to general room 101 =====
+===== D1 Admit Divya Lakshmi to general room 101 =====
+SQL> EXEC sp_admit_patient(1004, 101, 'Observation after consultation', :v_adm);
+Patient 1004 admitted to room 101 (admission 5012)                                                                                                                                                      
+
+PL/SQL procedure successfully completed.
+
+SQL> PRINT v_adm
+
+     V_ADM                                                                                                                                                                                              
+----------                                                                                                                                                                                              
+      5012                                                                                                                                                                                              
+
+SQL> SELECT admission_id, patient_id, room_no, discharge_date, reason
+  2  FROM   admission WHERE admission_id = :v_adm;
+
+ADMISSION_ID PATIENT_ID    ROOM_NO DISCHARGE REASON                                                                                                                                                     
+------------ ---------- ---------- --------- ----------------------------------------------------------------------------------------------------                                                       
+        5012       1004        101           Observation after consultation                                                                                                                             
+
+1 row selected.
+
+SQL> 
+SQL> PROMPT ===== D2 Admit the same patient again : ORA-20044 expected =====
+===== D2 Admit the same patient again : ORA-20044 expected =====
+SQL> EXEC sp_admit_patient(1004, 102, 'Second admission', :v_adm);
+BEGIN sp_admit_patient(1004, 102, 'Second admission', :v_adm); END;
+
+*
+ERROR at line 1:
+ORA-20044: Patient 1004 is already admitted 
+ORA-06512: at "SYSTEM.SP_ADMIT_PATIENT", line 33 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== D3 Occupied room 105 : ORA-20043 expected =====
+===== D3 Occupied room 105 : ORA-20043 expected =====
+SQL> EXEC sp_admit_patient(1006, 105, 'Fever', :v_adm);
+BEGIN sp_admit_patient(1006, 105, 'Fever', :v_adm); END;
+
+*
+ERROR at line 1:
+ORA-20043: Room 105 is not available (status: Occupied) 
+ORA-06512: at "SYSTEM.SP_ADMIT_PATIENT", line 23 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== D4 Unknown room / unknown patient : ORA-20042 and ORA-20041 expected =====
+===== D4 Unknown room / unknown patient : ORA-20042 and ORA-20041 expected =====
+SQL> EXEC sp_admit_patient(1006, 999, 'Fever', :v_adm);
+BEGIN sp_admit_patient(1006, 999, 'Fever', :v_adm); END;
+
+*
+ERROR at line 1:
+ORA-20042: Room 999 not found 
+ORA-06512: at "SYSTEM.SP_ADMIT_PATIENT", line 19 
+ORA-06512: at line 1 
+
+
+SQL> EXEC sp_admit_patient(9999, 102, 'Fever', :v_adm);
+BEGIN sp_admit_patient(9999, 102, 'Fever', :v_adm); END;
+
+*
+ERROR at line 1:
+ORA-20041: Patient 9999 not found 
+ORA-06512: at "SYSTEM.SP_ADMIT_PATIENT", line 12 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> -- =====================================================================
+SQL> -- PART E : sp_discharge_and_bill
+SQL> -- =====================================================================
+SQL> PROMPT
+
+SQL> PROMPT ===== E1 Invalid payment mode : ORA-20055 expected =====
+===== E1 Invalid payment mode : ORA-20055 expected =====
+SQL> EXEC sp_discharge_and_bill(5001, NULL, 'Bitcoin', :v_bill);
+BEGIN sp_discharge_and_bill(5001, NULL, 'Bitcoin', :v_bill); END;
+
+*
+ERROR at line 1:
+ORA-20055: Payment mode must be Cash, Card, UPI or Insurance 
+ORA-06512: at "SYSTEM.SP_DISCHARGE_AND_BILL", line 17 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== E2 Admission 5001 is already discharged : ORA-20052 expected =====
+===== E2 Admission 5001 is already discharged : ORA-20052 expected =====
+SQL> EXEC sp_discharge_and_bill(5001, NULL, 'Cash', :v_bill);
+BEGIN sp_discharge_and_bill(5001, NULL, 'Cash', :v_bill); END;
+
+*
+ERROR at line 1:
+ORA-20052: Admission 5001 is already discharged 
+ORA-06512: at "SYSTEM.SP_DISCHARGE_AND_BILL", line 32 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== E3 Appointment of another patient (3001 is Arjun Nair's) : ORA-20054 expected =====
+===== E3 Appointment of another patient (3001 is Arjun Nair's) : ORA-20054 expected =====
+SQL> EXEC sp_discharge_and_bill(5011, 3001, 'Cash', :v_bill);
+BEGIN sp_discharge_and_bill(5011, 3001, 'Cash', :v_bill); END;
+
+*
+ERROR at line 1:
+ORA-20054: Appointment 3001 belongs to a different patient 
+ORA-06512: at "SYSTEM.SP_DISCHARGE_AND_BILL", line 47 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== E4 Unknown admission / unknown appointment : ORA-20051 and ORA-20053 expected =====
+===== E4 Unknown admission / unknown appointment : ORA-20051 and ORA-20053 expected =====
+SQL> EXEC sp_discharge_and_bill(9999, NULL, 'Cash', :v_bill);
+BEGIN sp_discharge_and_bill(9999, NULL, 'Cash', :v_bill); END;
+
+*
+ERROR at line 1:
+ORA-20051: Admission 9999 not found 
+ORA-06512: at "SYSTEM.SP_DISCHARGE_AND_BILL", line 28 
+ORA-06512: at line 1 
+
+
+SQL> EXEC sp_discharge_and_bill(5011, 9999, 'Cash', :v_bill);
+BEGIN sp_discharge_and_bill(5011, 9999, 'Cash', :v_bill); END;
+
+*
+ERROR at line 1:
+ORA-20053: Appointment 9999 not found 
+ORA-06512: at "SYSTEM.SP_DISCHARGE_AND_BILL", line 44 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> PROMPT ===== E5 Discharge Divya Lakshmi and create the bill paid in Cash =====
+===== E5 Discharge Divya Lakshmi and create the bill paid in Cash =====
+SQL> PROMPT Expected: consultation 500 + medicine 15 + room 1000 = 1515
+Expected: consultation 500 + medicine 15 + room 1000 = 1515
+SQL> EXEC sp_discharge_and_bill(:v_adm, :v_appt2, 'Cash', :v_bill);
+Bill 7015 created: consultation 500 + medicine 15 + room 1000 = 1515 (Paid)                                                                                                                             
+
+PL/SQL procedure successfully completed.
+
+SQL> PRINT v_bill
+
+    V_BILL                                                                                                                                                                                              
+----------                                                                                                                                                                                              
+      7015                                                                                                                                                                                              
+
+SQL> SELECT bill_id, consultation_charge, medicine_charge, room_charge, total_amount,
+  2  	    payment_mode, payment_status
+  3  FROM   v_bill_total WHERE bill_id = :v_bill;
+
+   BILL_ID CONSULTATION_CHARGE MEDICINE_CHARGE ROOM_CHARGE TOTAL_AMOUNT PAYMENT_MO PAYMENT_ST                                                                                                           
+---------- ------------------- --------------- ----------- ------------ ---------- ----------                                                                                                           
+      7015                 500              15        1000         1515 Cash       Paid                                                                                                                 
+
+1 row selected.
+
+SQL> SELECT admission_id, admit_date, discharge_date FROM admission WHERE admission_id = :v_adm;
+
+ADMISSION_ID ADMIT_DAT DISCHARGE                                                                                                                                                                        
+------------ --------- ---------                                                                                                                                                                        
+        5012 25-OCT-26 25-OCT-26                                                                                                                                                                        
+
+1 row selected.
+
+SQL> 
+SQL> PROMPT ===== E6 Discharge the same admission again : ORA-20052 expected =====
+===== E6 Discharge the same admission again : ORA-20052 expected =====
+SQL> EXEC sp_discharge_and_bill(:v_adm, :v_appt2, 'Cash', :v_bill);
+BEGIN sp_discharge_and_bill(:v_adm, :v_appt2, 'Cash', :v_bill); END;
+
+*
+ERROR at line 1:
+ORA-20052: Admission 5012 is already discharged 
+ORA-06512: at "SYSTEM.SP_DISCHARGE_AND_BILL", line 32 
+ORA-06512: at line 1 
+
+
+SQL> 
+SQL> -- =====================================================================
+SQL> -- PART F : undo everything and check that the data is unchanged
+SQL> -- =====================================================================
+SQL> PROMPT
+
+SQL> PROMPT ===== F1 ROLLBACK : none of the test data is kept =====
+===== F1 ROLLBACK : none of the test data is kept =====
+SQL> ROLLBACK;
+
+Rollback complete.
+
+SQL> 
+SQL> SELECT 'appointment' AS table_name, COUNT(*) AS total_rows FROM appointment
+  2  UNION ALL SELECT 'prescribes', COUNT(*) FROM prescribes
+  3  UNION ALL SELECT 'admission',  COUNT(*) FROM admission
+  4  UNION ALL SELECT 'bill',	    COUNT(*) FROM bill;
+
+TABLE_NAME         TOTAL_ROWS                                                                                                                                                                           
+------------------ ----------                                                                                                                                                                           
+appointment                16                                                                                                                                                                           
+prescribes                 19                                                                                                                                                                           
+admission                  11                                                                                                                                                                           
+bill                       12                                                                                                                                                                           
+
+4 rows selected.
+
+SQL> 
+SQL> PROMPT Expected: appointment 16, prescribes 19, admission 11, bill 12
+Expected: appointment 16, prescribes 19, admission 11, bill 12
+SQL> SELECT medicine_id, medicine_name, stock_qty FROM medicine WHERE medicine_id = 201;
+
+MEDICINE_ID MEDICINE_NAME           STOCK_QTY                                                                                                                                                           
+----------- ---------------------- ----------                                                                                                                                                           
+        201 Paracetamol 500mg             500                                                                                                                                                           
+
+1 row selected.
+
+SQL> PROMPT Expected stock of Paracetamol: 500
+Expected stock of Paracetamol: 500
+SQL> 
+SQL> SPOOL OFF
